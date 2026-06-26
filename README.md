@@ -278,8 +278,6 @@ included. To deploy:
    single-page app has only one real HTML file; this hands all routes to it
    instead of returning 404.)
 5. Deploy. Your site lands at `https://<branch>.<app-id>.amplifyapp.com`.
-   To use a friendlier URL, rename the branch/app or attach a custom domain
-   under **App settings → Custom domains** (see "Controlling the URL" below).
 
 The S3 CORS rule already allows `https://*.amplifyapp.com`. If you attach a
 **custom domain**, add it to the bucket's CORS `AllowedOrigins`:
@@ -291,19 +289,3 @@ aws s3api put-bucket-cors --bucket <your-bucket> --region us-east-1 \
 
 > Heads-up: `npm run build` requires Node 18+. If your machine defaults to an
 > older Node, use Node 20 for the build (Amplify already does via `amplify.yml`).
-
-### Controlling the URL
-
-The default URL is `https://<branch>.<app-id>.amplifyapp.com` — the `<app-id>`
-is random and not editable, but you can improve the rest:
-
-- **Branch subdomain** — the leading `<branch>` comes from your git branch name
-  (e.g. `main.…`). Renaming the branch or app changes it, but it's still on the
-  shared `amplifyapp.com` domain.
-- **Custom domain (recommended for a real URL)** — to use something like
-  `maps.yourdomain.com`, you need to own a domain (buy one in Route 53, ~\$12/yr
-  for `.com`, or use a registrar you already have). Then in **Amplify → App
-  settings → Custom domains → Add domain**, enter it and pick the subdomain.
-  Amplify provisions a free TLS cert and wires DNS automatically if the domain
-  is in Route 53 (otherwise it gives you CNAME records to add at your registrar).
-  After it's live, add the new origin to the bucket CORS (command above).
