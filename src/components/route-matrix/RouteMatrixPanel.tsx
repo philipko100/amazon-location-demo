@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import type { LngLat, NamedPoint, TravelMode } from "../../types";
 import { useRouteMatrix } from "../../hooks/useRouteMatrix";
+import { formatLngLat } from "../../utils/format";
 import { MAX_ORIGINS, MAX_DESTINATIONS } from "../../config/limits";
 import { useAppState, type MapMarker } from "../../state/AppState";
 import { PointList } from "./PointList";
@@ -41,7 +42,7 @@ export function RouteMatrixPanel() {
   function addPoint(kind: "origin" | "dest", position: LngLat, label?: string) {
     const point: NamedPoint = {
       id: crypto.randomUUID(),
-      label: label ?? `${position[1].toFixed(4)}, ${position[0].toFixed(4)}`,
+      label: label ?? formatLngLat(position),
       position,
     };
     // Functional updates + cap enforcement, so adds from the async map-pick

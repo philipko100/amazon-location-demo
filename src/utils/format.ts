@@ -1,4 +1,15 @@
 /** Display formatters for the route matrix grid. */
+import type { LngLat } from "../types";
+
+/**
+ * Format a coordinate for display in "lng, lat" order — matching Amazon
+ * Location's convention and the input field. Use this everywhere a coordinate
+ * is shown so the order is always consistent.
+ */
+export function formatLngLat(position: LngLat, digits = 4): string {
+  const [lng, lat] = position;
+  return `${lng.toFixed(digits)}, ${lat.toFixed(digits)}`;
+}
 
 export function formatDistance(meters: number | null, unit: "km" | "mi"): string {
   if (meters === null) return "—";

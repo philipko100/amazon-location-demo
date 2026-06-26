@@ -1,5 +1,6 @@
 /** Validation results table with confidence-colored rows. */
 import type { MatchConfidence, ValidationResult } from "../../types";
+import { formatLngLat } from "../../utils/format";
 
 const CONFIDENCE_BG: Record<MatchConfidence, string> = {
   High: "#dcfce7",
@@ -21,7 +22,7 @@ export function ResultsTable({ results }: { results: ValidationResult[] }) {
             <th style={th}>Granularity</th>
             <th style={th}>Confidence</th>
             <th style={th}>Score</th>
-            <th style={th}>Coordinates</th>
+            <th style={th}>Coordinates (lng, lat)</th>
           </tr>
         </thead>
         <tbody>
@@ -38,7 +39,7 @@ export function ResultsTable({ results }: { results: ValidationResult[] }) {
                 {r.confidenceScore != null ? r.confidenceScore.toFixed(2) : "—"}
               </td>
               <td style={td}>
-                {r.position ? `${r.position[1].toFixed(5)}, ${r.position[0].toFixed(5)}` : "—"}
+                {r.position ? formatLngLat(r.position, 5) : "—"}
               </td>
             </tr>
           ))}
