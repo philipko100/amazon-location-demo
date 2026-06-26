@@ -34,14 +34,25 @@ async function loadWasm(): Promise<ParquetWasm> {
 /** Encode addresses to Parquet bytes using the documented input column schema. */
 export async function addressesToParquet(addresses: AddressInput[]): Promise<Uint8Array> {
   const wasm = await loadWasm();
-  const table = tableFromArrays({
+
+  // The Jobs input is columnar and each AddressComponents_* column it scans must
+  // be non-empty for EVERY row ("must have length at least 1"). So a column is
+  // only included when all rows have a value for it — otherwise a single blank
+  // cell would fail the whole job. Callers pre-filter rows lacking a locality.
+  const columns: Record<string, string[]> = {
     Id: addresses.map((a) => a.id),
-    AddressLines_1: addresses.map((a) => a.line1 ?? ""),
+    AddressLines_1: addresses.map((a) => a.line1),
     AddressComponents_Locality: addresses.map((a) => a.locality ?? ""),
-    AddressComponents_Region: addresses.map((a) => a.region ?? ""),
-    AddressComponents_PostalCode: addresses.map((a) => a.postalCode ?? ""),
-    AddressComponents_Country: addresses.map((a) => a.country ?? "US"),
-  });
+  };
+  const addIfComplete = (name: string, pick: (a: AddressInput) => string | undefined) => {
+    const vals = addresses.map((a) => pick(a)?.trim() ?? "");
+    if (vals.every((v) => v.length > 0)) columns[name] = vals;
+  };
+  addIfComplete("AddressComponents_Region", (a) => a.region);
+  addIfComplete("AddressComponents_PostalCode", (a) => a.postalCode);
+  addIfComplete("AddressComponents_Country", (a) => a.country);
+
+  const table = tableFromArrays(columns);
 
   // apache-arrow -> Arrow IPC stream -> parquet-wasm Table -> Parquet bytes.
   const ipc = tableToIPC(table, "stream");

@@ -6,7 +6,7 @@
  * progress percentage from the Jobs API, so we surface the status string only.
  */
 import { useCallback, useState } from "react";
-import type { AddressInput, ValidationResult } from "../types";
+import type { AddressInput, EnrichedAddress, ValidationResult } from "../types";
 import { addressesToParquet, parseResults } from "../utils/parquet";
 import { uploadParquet, listKeys, downloadBytes } from "../services/s3Client";
 import { enrichAddress } from "../services/placesClient";
@@ -42,6 +42,7 @@ export function useBulkValidation() {
   const [stage, setStage] = useState<PipelineStage>("idle");
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [enrichedAddresses, setEnrichedAddresses] = useState<EnrichedAddress[] | null>(null);
   const [results, setResults] = useState<ValidationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +60,7 @@ export function useBulkValidation() {
     setResults(null);
     setJobStatus(null);
     setLastUpdated(null);
+    setEnrichedAddresses(null);
     const key = newJobKey();
     // The Jobs API treats InputOptions.Location as a DIRECTORY/prefix and scans
     // it for Parquet files — not a single file path. So we put the file inside a
@@ -72,19 +74,30 @@ export function useBulkValidation() {
       // components the Jobs schema requires (locality, region, postal code) are
       // populated. Sequential to keep request rate gentle for the demo.
       setStage("enriching");
-      const enriched: AddressInput[] = [];
+      const enriched: EnrichedAddress[] = [];
       for (const addr of addresses) {
         try {
           enriched.push(await enrichAddress(addr));
         } catch {
-          // If enrichment fails for one row, keep the original; the job may
-          // still reject it, but one bad lookup shouldn't sink the batch.
-          enriched.push(addr);
+          // A failed lookup just marks the row not-ready; it gets dropped below
+          // rather than failing the whole job with an empty locality cell.
+          enriched.push({ ...addr, ready: false });
         }
+      }
+      setEnrichedAddresses(enriched);
+
+      // Parquet is columnar: a single empty AddressComponents_Locality fails the
+      // entire job. Only send rows that came back with the required component.
+      const ready = enriched.filter((a) => a.ready);
+      if (ready.length === 0) {
+        throw new Error(
+          "Autocomplete couldn't resolve a city/locality for any address. " +
+            "Try adding more detail (e.g. city and state).",
+        );
       }
 
       setStage("encoding");
-      const parquet = await addressesToParquet(enriched);
+      const parquet = await addressesToParquet(ready);
 
       setStage("uploading");
       await uploadParquet(inputKey, parquet);
@@ -133,5 +146,5 @@ export function useBulkValidation() {
     }
   }, []);
 
-  return { stage, jobStatus, lastUpdated, results, error, run };
+  return { stage, jobStatus, lastUpdated, enrichedAddresses, results, error, run };
 }

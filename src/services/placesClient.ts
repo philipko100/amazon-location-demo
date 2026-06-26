@@ -14,7 +14,7 @@
 import { GeoPlacesClient, AutocompleteCommand } from "@aws-sdk/client-geo-places";
 import { getAuthHelper } from "./auth";
 import { AWS_REGION } from "../config/aws";
-import type { AddressInput } from "../types";
+import type { AddressInput, EnrichedAddress } from "../types";
 
 let clientPromise: Promise<GeoPlacesClient> | null = null;
 
@@ -42,12 +42,18 @@ function queryTextFor(addr: AddressInput): string {
 /**
  * Enrich one address via Autocomplete: take the top result's structured Address
  * and fill any components the user left blank. Existing user-supplied values win
- * (we only fill gaps). On no match / error, the row is returned unchanged so the
- * caller can decide how to handle it.
+ * (we only fill gaps).
+ *
+ * Returns an EnrichedAddress with `ready` = true only when a non-empty Locality
+ * is present afterward. The Jobs ValidateAddress input is Parquet (columnar): if
+ * ANY row's AddressComponents_Locality is empty, the whole job fails with
+ * "'AddressComponents_Locality' must have length at least 1". So the caller drops
+ * not-ready rows rather than letting one blank cell sink the batch.
  */
-export async function enrichAddress(addr: AddressInput): Promise<AddressInput> {
+export async function enrichAddress(addr: AddressInput): Promise<EnrichedAddress> {
   const query = queryTextFor(addr);
-  if (!query) return addr;
+  const notReady = (a: AddressInput): EnrichedAddress => ({ ...a, ready: false });
+  if (!query) return notReady(addr);
 
   const client = await getPlacesClient();
   const res = await client.send(
@@ -60,17 +66,23 @@ export async function enrichAddress(addr: AddressInput): Promise<AddressInput> {
   );
 
   const top = res.ResultItems?.[0]?.Address;
-  if (!top) return addr;
+  if (!top) return notReady(addr);
 
   const fill = (existing: string | undefined, next: string | undefined) =>
-    existing && existing.trim() ? existing : (next?.trim() || existing);
+    existing && existing.trim() ? existing : next?.trim() || existing;
 
-  return {
+  const merged: AddressInput = {
     ...addr,
     line1: fill(addr.line1, top.Label) ?? addr.line1,
     locality: fill(addr.locality, top.Locality),
     region: fill(addr.region, top.Region?.Code ?? top.Region?.Name),
     postalCode: fill(addr.postalCode, top.PostalCode),
     country: fill(addr.country, top.Country?.Code3 ?? top.Country?.Code2),
+  };
+
+  return {
+    ...merged,
+    enrichedLabel: top.Label,
+    ready: Boolean(merged.locality && merged.locality.trim()),
   };
 }
