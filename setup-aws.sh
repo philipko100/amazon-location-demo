@@ -204,8 +204,7 @@ UNAUTH_POLICY=$(cat <<JSON
     { "Sid": "Jobs", "Effect": "Allow",
       "Action": ["geo:StartJob","geo:GetJob","geo:ListJobs"], "Resource": "*" },
     { "Sid": "PassJobsRole", "Effect": "Allow",
-      "Action": "iam:PassRole", "Resource": "${JOBS_ROLE_ARN}",
-      "Condition": {"StringEquals": {"iam:PassedToService": "geo.amazonaws.com"}} },
+      "Action": "iam:PassRole", "Resource": "${JOBS_ROLE_ARN}" },
     { "Sid": "S3ForJobs", "Effect": "Allow",
       "Action": ["s3:PutObject","s3:GetObject","s3:ListBucket"],
       "Resource": ["arn:aws:s3:::${BUCKET}","arn:aws:s3:::${BUCKET}/*"] }
