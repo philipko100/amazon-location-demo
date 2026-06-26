@@ -13,28 +13,42 @@ interface Props {
   onPickFromMap: () => void;
 }
 
-/** Accepts "lng,lat" or "lat,lng"? We standardize on "lng,lat" to match the API. */
-function parseLngLat(text: string): LngLat | null {
-  const m = text.split(",").map((s) => Number(s.trim()));
-  if (m.length !== 2 || m.some(Number.isNaN)) return null;
-  return [m[0]!, m[1]!];
+/**
+ * Parse "lng, lat" (the order Amazon Location uses). Returns the point, or an
+ * error message explaining what's wrong — including the common mistake of
+ * entering coordinates in "lat, lng" order (latitude must be within ±90, so a
+ * value like 122 in the second slot is rejected rather than crashing the map).
+ */
+function parseLngLat(text: string): { point: LngLat } | { error: string } {
+  const parts = text.split(",").map((s) => Number(s.trim()));
+  if (parts.length !== 2 || parts.some(Number.isNaN)) {
+    return { error: "Enter two numbers as: lng, lat" };
+  }
+  const [lng, lat] = parts as [number, number];
+  if (lng < -180 || lng > 180) {
+    return { error: "Longitude must be between -180 and 180" };
+  }
+  if (lat < -90 || lat > 90) {
+    return { error: "Latitude must be between -90 and 90 (did you swap lng/lat?)" };
+  }
+  return { point: [lng, lat] };
 }
 
 export function PointList({ title, color, points, max, onAdd, onRemove, onPickFromMap }: Props) {
   const [text, setText] = useState("");
-  const [err, setErr] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const atCapacity = points.length >= max;
 
   function submit() {
     if (atCapacity) return;
-    const pos = parseLngLat(text);
-    if (!pos) {
-      setErr(true);
+    const parsed = parseLngLat(text);
+    if ("error" in parsed) {
+      setErr(parsed.error);
       return;
     }
-    onAdd(pos);
+    onAdd(parsed.point);
     setText("");
-    setErr(false);
+    setErr(null);
   }
 
   return (
@@ -48,7 +62,10 @@ export function PointList({ title, color, points, max, onAdd, onRemove, onPickFr
           placeholder={atCapacity ? "limit reached" : "lng, lat"}
           value={text}
           disabled={atCapacity}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (err) setErr(null);
+          }}
           onKeyDown={(e) => e.key === "Enter" && submit()}
         />
         <Button
@@ -60,6 +77,7 @@ export function PointList({ title, color, points, max, onAdd, onRemove, onPickFr
           +
         </Button>
       </div>
+      {err && <div style={errTextStyle}>{err}</div>}
       <Button
         variant="ghost"
         onClick={onPickFromMap}
@@ -91,6 +109,11 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid #ccc",
   borderRadius: 4,
   fontSize: 13,
+};
+const errTextStyle: React.CSSProperties = {
+  color: "#dc2626",
+  fontSize: 11,
+  marginTop: 4,
 };
 const listStyle: React.CSSProperties = { listStyle: "none", padding: 0, margin: "8px 0 0" };
 const liStyle: React.CSSProperties = {
