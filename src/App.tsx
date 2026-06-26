@@ -72,9 +72,9 @@ const headerStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   padding: "12px 18px",
-  // Gradient bar with a thin orange underline for a bit more depth.
+  // Gradient bar with a thin blue underline for a bit more depth.
   background: "linear-gradient(90deg, #1b2532 0%, #232f3e 55%, #2d3e52 100%)",
-  borderBottom: "3px solid #ff9900",
+  borderBottom: "3px solid #2563eb",
   color: "white",
   flexShrink: 0,
   boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
@@ -86,10 +86,10 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   padding: "7px 16px",
   cursor: "pointer",
   fontSize: 14,
-  background: active ? "linear-gradient(90deg, #ffb84d 0%, #ff9900 100%)" : "rgba(255,255,255,0.06)",
-  color: active ? "#232f3e" : "#cbd3dc",
+  background: active ? "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)" : "rgba(255,255,255,0.06)",
+  color: active ? "#ffffff" : "#cbd3dc",
   fontWeight: active ? 700 : 500,
-  boxShadow: active ? "0 3px 10px rgba(255,153,0,0.4)" : "none",
+  boxShadow: active ? "0 3px 10px rgba(37,99,235,0.45)" : "none",
   transition: "background 0.15s ease, color 0.15s ease",
 });
 const mainStyle: React.CSSProperties = { position: "relative", flex: 1, minHeight: 0 };

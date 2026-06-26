@@ -1,6 +1,6 @@
 :root {
   --aws-navy: #232f3e;
-  --aws-orange: #ff9900;
+  --accent-blue: #2563eb;
 }
 
 * {
@@ -40,7 +40,7 @@ button:not(:disabled):active {
   display: inline-block;
   border-style: solid;
   border-color: rgba(35, 47, 62, 0.2);
-  border-top-color: var(--aws-orange);
+  border-top-color: var(--accent-blue);
   border-radius: 50%;
   animation: als-spin 0.7s linear infinite;
   vertical-align: middle;

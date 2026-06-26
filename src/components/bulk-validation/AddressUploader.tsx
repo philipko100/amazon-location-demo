@@ -31,7 +31,7 @@ export function AddressUploader({ value, onChange, count }: Props) {
           const file = e.dataTransfer.files?.[0];
           if (file) readFile(file);
         }}
-        style={{ ...dropStyle, borderColor: dragging ? "#ff9900" : "#ccc" }}
+        style={{ ...dropStyle, borderColor: dragging ? "#2563eb" : "#ccc" }}
       >
         <textarea
           value={value}

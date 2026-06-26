@@ -47,7 +47,7 @@ const btnStyle = (active: boolean): React.CSSProperties => ({
   cursor: "pointer",
   fontSize: 12,
   whiteSpace: "nowrap",
-  background: active ? "#ff9900" : "transparent",
-  color: active ? "#232f3e" : "#555",
+  background: active ? "#2563eb" : "transparent",
+  color: active ? "#ffffff" : "#555",
   fontWeight: active ? 600 : 400,
 });

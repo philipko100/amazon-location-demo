@@ -23,7 +23,7 @@ const base: React.CSSProperties = {
 };
 
 const variants: Record<string, React.CSSProperties> = {
-  primary: { background: "#ff9900", color: "#232f3e" },
+  primary: { background: "#2563eb", color: "white" },
   secondary: { background: "#232f3e", color: "white" },
   ghost: { background: "transparent", color: "#232f3e", border: "1px solid #ccc" },
 };
