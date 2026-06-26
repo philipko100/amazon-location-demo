@@ -23,6 +23,18 @@ button {
   font-family: inherit;
 }
 
+/* Subtle interactive lift on all buttons for a bit more pop. */
+button:not(:disabled) {
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+button:not(:disabled):hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+button:not(:disabled):active {
+  transform: translateY(0);
+}
+
 /* Spinner used by components/shared/Spinner.tsx */
 .als-spinner {
   display: inline-block;

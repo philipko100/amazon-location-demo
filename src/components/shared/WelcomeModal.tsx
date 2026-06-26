@@ -57,32 +57,43 @@ const backdropStyle: React.CSSProperties = {
 };
 const dialogStyle: React.CSSProperties = {
   background: "white",
-  borderRadius: 12,
-  padding: "28px 28px 24px",
+  borderRadius: 16,
+  padding: "36px 32px 32px",
   maxWidth: 640,
   width: "100%",
-  boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
+  textAlign: "center",
+  // Accent bar along the top + soft glow for a bit more pop.
+  borderTop: "5px solid #ff9900",
+  boxShadow: "0 20px 60px rgba(15, 23, 42, 0.45)",
   fontFamily: "system-ui, sans-serif",
 };
 const titleStyle: React.CSSProperties = {
-  margin: "0 0 12px",
-  fontSize: 24,
-  color: "#232f3e",
+  margin: "0 0 14px",
+  fontSize: 30,
+  fontWeight: 800,
+  letterSpacing: "-0.01em",
+  // Brand gradient text (navy -> orange).
+  background: "linear-gradient(90deg, #232f3e 0%, #ff9900 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  WebkitTextFillColor: "transparent",
 };
 const bodyStyle: React.CSSProperties = {
-  margin: "0 0 14px",
+  margin: "0 auto 14px",
+  maxWidth: 520,
   fontSize: 15,
-  lineHeight: 1.55,
+  lineHeight: 1.6,
   color: "#374151",
 };
 const buttonStyle: React.CSSProperties = {
-  marginTop: 4,
+  marginTop: 12,
   border: "none",
-  borderRadius: 8,
-  padding: "10px 20px",
+  borderRadius: 10,
+  padding: "12px 28px",
   fontSize: 15,
-  fontWeight: 600,
+  fontWeight: 700,
   cursor: "pointer",
-  background: "#ff9900",
   color: "#232f3e",
+  background: "linear-gradient(90deg, #ffb84d 0%, #ff9900 100%)",
+  boxShadow: "0 6px 18px rgba(255, 153, 0, 0.45)",
 };

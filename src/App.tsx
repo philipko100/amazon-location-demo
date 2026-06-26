@@ -71,21 +71,26 @@ const headerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "10px 16px",
-  background: "#232f3e",
+  padding: "12px 18px",
+  // Gradient bar with a thin orange underline for a bit more depth.
+  background: "linear-gradient(90deg, #1b2532 0%, #232f3e 55%, #2d3e52 100%)",
+  borderBottom: "3px solid #ff9900",
   color: "white",
   flexShrink: 0,
+  boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
 };
-const navStyle: React.CSSProperties = { display: "flex", gap: 4 };
+const navStyle: React.CSSProperties = { display: "flex", gap: 6 };
 const tabStyle = (active: boolean): React.CSSProperties => ({
   border: "none",
-  borderRadius: 6,
-  padding: "6px 14px",
+  borderRadius: 8,
+  padding: "7px 16px",
   cursor: "pointer",
   fontSize: 14,
-  background: active ? "#ff9900" : "transparent",
+  background: active ? "linear-gradient(90deg, #ffb84d 0%, #ff9900 100%)" : "rgba(255,255,255,0.06)",
   color: active ? "#232f3e" : "#cbd3dc",
-  fontWeight: active ? 600 : 400,
+  fontWeight: active ? 700 : 500,
+  boxShadow: active ? "0 3px 10px rgba(255,153,0,0.4)" : "none",
+  transition: "background 0.15s ease, color 0.15s ease",
 });
 const mainStyle: React.CSSProperties = { position: "relative", flex: 1, minHeight: 0 };
 const mapWrapStyle: React.CSSProperties = { position: "absolute", inset: 0 };
