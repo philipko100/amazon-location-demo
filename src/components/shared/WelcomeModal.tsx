@@ -63,7 +63,7 @@ const dialogStyle: React.CSSProperties = {
   width: "100%",
   textAlign: "center",
   // Accent bar along the top + soft glow for a bit more pop.
-  borderTop: "5px solid #2563eb",
+  borderTop: "5px solid #1d4ed8",
   boxShadow: "0 20px 60px rgba(15, 23, 42, 0.45)",
   fontFamily: "system-ui, sans-serif",
 };
@@ -73,7 +73,7 @@ const titleStyle: React.CSSProperties = {
   fontWeight: 800,
   letterSpacing: "-0.01em",
   // Brand gradient text (navy -> blue).
-  background: "linear-gradient(90deg, #232f3e 0%, #2563eb 100%)",
+  background: "linear-gradient(90deg, #232f3e 0%, #1d4ed8 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   WebkitTextFillColor: "transparent",
@@ -94,6 +94,6 @@ const buttonStyle: React.CSSProperties = {
   fontWeight: 700,
   cursor: "pointer",
   color: "#ffffff",
-  background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)",
-  boxShadow: "0 6px 18px rgba(37, 99, 235, 0.45)",
+  background: "linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%)",
+  boxShadow: "0 6px 18px rgba(29, 78, 216, 0.5)",
 };

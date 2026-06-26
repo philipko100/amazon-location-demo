@@ -166,7 +166,7 @@ export function MapCanvas() {
           source: LINE_SOURCE_ID,
           filter: ["==", ["get", "error"], 0],
           layout: { "line-cap": "round", "line-join": "round" },
-          paint: { "line-color": "#2563eb", "line-width": 2, "line-opacity": 0.7 },
+          paint: { "line-color": "#1d4ed8", "line-width": 2, "line-opacity": 0.7 },
         },
         firstSymbolId,
       );
@@ -257,7 +257,7 @@ const pickBannerStyle: React.CSSProperties = {
 // Applied to DOM elements for route midpoint labels (not React styles).
 const lineLabelCss: Partial<CSSStyleDeclaration> = {
   background: "rgba(255,255,255,0.92)",
-  border: "1px solid #2563eb",
+  border: "1px solid #1d4ed8",
   borderRadius: "10px",
   padding: "1px 6px",
   fontSize: "11px",

@@ -17,7 +17,7 @@ import { Button } from "../shared/Button";
 import { ErrorBanner } from "../shared/ErrorBanner";
 import { Spinner } from "../shared/Spinner";
 
-const ORIGIN_COLOR = "#2563eb";
+const ORIGIN_COLOR = "#1d4ed8";
 const DEST_COLOR = "#dc2626";
 
 export function RouteMatrixPanel() {
