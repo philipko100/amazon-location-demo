@@ -23,6 +23,15 @@ export interface MapMarker {
   label?: string;
 }
 
+/** A line connecting an origin to a destination, with an optional midpoint label. */
+export interface RouteLine {
+  id: string;
+  from: LngLat;
+  to: LngLat;
+  label?: string; // e.g. "12.3 km · 15 min"
+  error?: boolean; // true when the pair had no route
+}
+
 /** When set, the next map click is routed to this callback instead of normal handling. */
 type PickHandler = ((position: LngLat) => void) | null;
 
@@ -31,6 +40,8 @@ interface AppStateValue {
   setTab: (t: FeatureTab) => void;
   markers: MapMarker[];
   setMarkers: (m: MapMarker[]) => void;
+  routeLines: RouteLine[];
+  setRouteLines: (l: RouteLine[]) => void;
   pickHandler: PickHandler;
   requestPick: (handler: PickHandler) => void;
 }
@@ -40,6 +51,7 @@ const Ctx = createContext<AppStateValue | null>(null);
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [tab, setTabState] = useState<FeatureTab>("map");
   const [markers, setMarkers] = useState<MapMarker[]>([]);
+  const [routeLines, setRouteLines] = useState<RouteLine[]>([]);
   const [pickHandler, setPickHandler] = useState<PickHandler>(null);
 
   // requestPick stores a function; wrap so setState doesn't treat it as an
@@ -59,8 +71,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AppStateValue>(
-    () => ({ tab, setTab, markers, setMarkers, pickHandler, requestPick }),
-    [tab, setTab, markers, pickHandler, requestPick],
+    () => ({ tab, setTab, markers, setMarkers, routeLines, setRouteLines, pickHandler, requestPick }),
+    [tab, setTab, markers, routeLines, pickHandler, requestPick],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

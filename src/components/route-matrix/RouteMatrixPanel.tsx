@@ -8,9 +8,15 @@
 import { useEffect, useState } from "react";
 import type { LngLat, NamedPoint, TravelMode } from "../../types";
 import { useRouteMatrix } from "../../hooks/useRouteMatrix";
-import { formatLngLat } from "../../utils/format";
-import { MAX_ORIGINS, MAX_DESTINATIONS } from "../../config/limits";
-import { useAppState, type MapMarker } from "../../state/AppState";
+import { formatLngLat, formatDistance, formatDuration } from "../../utils/format";
+import {
+  MAX_ORIGINS,
+  MAX_DESTINATIONS,
+  API_MAX_ORIGINS,
+  API_MAX_DESTINATIONS,
+  API_MAX_MATRIX,
+} from "../../config/limits";
+import { useAppState, type MapMarker, type RouteLine } from "../../state/AppState";
 import { PointList } from "./PointList";
 import { MatrixGrid } from "./MatrixGrid";
 import { Button } from "../shared/Button";
@@ -26,7 +32,7 @@ export function RouteMatrixPanel() {
   const [mode, setMode] = useState<TravelMode>("Car");
   const [unit, setUnit] = useState<"km" | "mi">("km");
   const { result, loading, error, run } = useRouteMatrix();
-  const { setMarkers, requestPick } = useAppState();
+  const { setMarkers, setRouteLines, requestPick } = useAppState();
 
   // Keep the map's markers derived from the current points. Doing this in an
   // effect (rather than inside each mutation) means it always reflects the
@@ -38,6 +44,37 @@ export function RouteMatrixPanel() {
     ];
     setMarkers(markers);
   }, [origins, destinations, setMarkers]);
+
+  // Draw a line for every origin→destination pair once a matrix is calculated,
+  // each labeled with that route's distance · time. Cleared when inputs change
+  // (result becomes null) so stale lines don't linger.
+  useEffect(() => {
+    if (!result) {
+      setRouteLines([]);
+      return;
+    }
+    const lines: RouteLine[] = [];
+    result.origins.forEach((o, i) =>
+      result.destinations.forEach((d, j) => {
+        const cell = result.cells[i]?.[j];
+        if (!cell) return;
+        const label = cell.error
+          ? "no route"
+          : `${formatDistance(cell.distanceMeters, unit)} · ${formatDuration(cell.durationSeconds)}`;
+        lines.push({
+          id: `${o.id}-${d.id}`,
+          from: o.position,
+          to: d.position,
+          label,
+          error: Boolean(cell.error),
+        });
+      }),
+    );
+    setRouteLines(lines);
+  }, [result, unit, setRouteLines]);
+
+  // Clear route lines when this panel unmounts so they don't persist on the map.
+  useEffect(() => () => setRouteLines([]), [setRouteLines]);
 
   function addPoint(kind: "origin" | "dest", position: LngLat, label?: string) {
     const point: NamedPoint = {
@@ -75,7 +112,10 @@ export function RouteMatrixPanel() {
       <p style={hintStyle}>
         Add origins and destinations, then calculate distance &amp; time for every
         pair. This demo is limited to {MAX_ORIGINS} origins and{" "}
-        {MAX_DESTINATIONS} destinations.
+        {MAX_DESTINATIONS} destinations. The CalculateRouteMatrix API itself
+        scales to {API_MAX_ORIGINS.toLocaleString()} origins ×{" "}
+        {API_MAX_DESTINATIONS.toLocaleString()} destinations —{" "}
+        {API_MAX_MATRIX.toLocaleString()} routes in a single request.
       </p>
 
       <div style={columnsStyle}>

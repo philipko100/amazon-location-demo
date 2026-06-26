@@ -19,3 +19,13 @@ export const MAX_DESTINATIONS = 15;
 
 /** Max addresses a single bulk-validation run will submit. */
 export const MAX_ADDRESSES = 20;
+
+/**
+ * The actual CalculateRouteMatrix API maximums (shown in the UI to convey the
+ * API's real capacity). These apply when a RoutingBoundary.Geometry is set,
+ * which this app always does — so the bounded caps, not the lower "unbounded"
+ * limits, are what's relevant. Source: AWS API reference, CalculateRouteMatrix.
+ */
+export const API_MAX_ORIGINS = 500;
+export const API_MAX_DESTINATIONS = 500;
+export const API_MAX_MATRIX = 160_000; // origins × destinations cap per request
