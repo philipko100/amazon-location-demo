@@ -3,9 +3,11 @@
  * tab switch is expensive and loses view state); the Route Matrix and Bulk
  * Validation panels slide in over the right side when their tab is active.
  */
+import { useState } from "react";
 import { MapCanvas } from "./components/map/MapCanvas";
 import { RouteMatrixPanel } from "./components/route-matrix/RouteMatrixPanel";
 import { BulkValidationPanel } from "./components/bulk-validation/BulkValidationPanel";
+import { WelcomeModal } from "./components/shared/WelcomeModal";
 import { useAppState, type FeatureTab } from "./state/AppState";
 
 const TABS: { id: FeatureTab; label: string }[] = [
@@ -16,9 +18,11 @@ const TABS: { id: FeatureTab; label: string }[] = [
 
 export function App() {
   const { tab, setTab } = useAppState();
+  const [showWelcome, setShowWelcome] = useState(true);
 
   return (
     <div style={rootStyle}>
+      {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
       <header style={headerStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/favicon.svg" width={24} height={24} alt="" />
