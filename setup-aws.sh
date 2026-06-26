@@ -33,6 +33,8 @@ UNAUTH_ROLE_NAME="${UNAUTH_ROLE_NAME:-AmazonLocationDemoUnauthRole}"
 JOBS_ROLE_NAME="${JOBS_ROLE_NAME:-AmazonLocationDemoJobsRole}"
 MAP_NAME="${MAP_NAME:-DemoOpenDataLight}"
 MAP_NAME_DARK="${MAP_NAME_DARK:-DemoOpenDataDark}"
+MAP_NAME_VIZ_LIGHT="${MAP_NAME_VIZ_LIGHT:-DemoOpenDataVizLight}"
+MAP_NAME_VIZ_DARK="${MAP_NAME_VIZ_DARK:-DemoOpenDataVizDark}"
 # S3 bucket names are global; a random suffix is appended if not supplied.
 BUCKET="${BUCKET:-}"
 
@@ -65,15 +67,15 @@ read -r -p "Create demo resources in the account above? [y/N] " ok
 if [[ -z "$BUCKET" ]]; then
   BUCKET="amazon-location-demo-${ACCOUNT_ID}-${REGION}"
 fi
-MAP_ARN="arn:aws:geo:${REGION}:${ACCOUNT_ID}:map/${MAP_NAME}"
-MAP_ARN_DARK="arn:aws:geo:${REGION}:${ACCOUNT_ID}:map/${MAP_NAME_DARK}"
+map_arn() { echo "arn:aws:geo:${REGION}:${ACCOUNT_ID}:map/$1"; }
+MAP_ARNS="\"$(map_arn "$MAP_NAME")\",\"$(map_arn "$MAP_NAME_DARK")\",\"$(map_arn "$MAP_NAME_VIZ_LIGHT")\",\"$(map_arn "$MAP_NAME_VIZ_DARK")\""
 JOBS_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${JOBS_ROLE_NAME}"
 
 # ----------------------------------------------------------------------------
 # 1. Map resources (V1 / OpenData)
 # ----------------------------------------------------------------------------
 say "Maps: creating V1 OpenData map resources"
-for pair in "${MAP_NAME}:VectorOpenDataStandardLight" "${MAP_NAME_DARK}:VectorOpenDataStandardDark"; do
+for pair in "${MAP_NAME}:VectorOpenDataStandardLight" "${MAP_NAME_DARK}:VectorOpenDataStandardDark" "${MAP_NAME_VIZ_LIGHT}:VectorOpenDataVisualizationLight" "${MAP_NAME_VIZ_DARK}:VectorOpenDataVisualizationDark"; do
   name="${pair%%:*}"; style="${pair##*:}"
   if aws location describe-map --map-name "$name" >/dev/null 2>&1; then
     echo "  map '$name' already exists — skipping"
@@ -198,7 +200,7 @@ UNAUTH_POLICY=$(cat <<JSON
   "Statement": [
     { "Sid": "V1Maps", "Effect": "Allow",
       "Action": ["geo:GetMapTile","geo:GetMapStyleDescriptor","geo:GetMapGlyphs","geo:GetMapSprites"],
-      "Resource": ["${MAP_ARN}","${MAP_ARN_DARK}"] },
+      "Resource": [${MAP_ARNS}] },
     { "Sid": "V2RouteMatrix", "Effect": "Allow",
       "Action": "geo-routes:CalculateRouteMatrix", "Resource": "*" },
     { "Sid": "V2Places", "Effect": "Allow",
@@ -260,6 +262,8 @@ VITE_COGNITO_IDENTITY_POOL_ID=${POOL_ID}
 VITE_COGNITO_UNAUTH_ROLE_ARN=${UNAUTH_ROLE_ARN}
 VITE_MAP_NAME=${MAP_NAME}
 VITE_MAP_NAME_DARK=${MAP_NAME_DARK}
+VITE_MAP_NAME_VIZ_LIGHT=${MAP_NAME_VIZ_LIGHT}
+VITE_MAP_NAME_VIZ_DARK=${MAP_NAME_VIZ_DARK}
 VITE_VALIDATION_BUCKET=${BUCKET}
 VITE_JOBS_EXECUTION_ROLE_ARN=${JOBS_ROLE_ARN}
 ENV
@@ -271,7 +275,7 @@ cat <<SUMMARY
   Identity Pool:     ${POOL_ID}
   Unauth role:       ${UNAUTH_ROLE_ARN}
   Jobs role:         ${JOBS_ROLE_ARN}
-  Maps:              ${MAP_NAME}, ${MAP_NAME_DARK}
+  Maps:              ${MAP_NAME}, ${MAP_NAME_DARK}, ${MAP_NAME_VIZ_LIGHT}, ${MAP_NAME_VIZ_DARK}
   S3 bucket:         ${BUCKET}
   Budget:            \$${BUDGET_AMOUNT}/mo -> ${ALERT_EMAIL}
 

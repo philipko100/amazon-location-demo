@@ -1,29 +1,26 @@
-/** Light/Dark OpenData style toggle (each style is a separate V1 Map resource). */
+/** OpenData style switcher — one button per configured V1 Map resource. */
+import type { MapStyle } from "../../config/aws";
 
 interface Props {
-  light: string;
-  dark: string;
-  active: string;
-  onChange: (mapName: string) => void;
+  styles: MapStyle[];
+  activeKey: string;
+  onChange: (key: string) => void;
 }
 
-export function StyleSwitcher({ light, dark, active, onChange }: Props) {
+export function StyleSwitcher({ styles, activeKey, onChange }: Props) {
+  if (styles.length < 2) return null; // nothing to switch between
   return (
     <div style={wrapStyle}>
-      <button
-        style={btnStyle(active === light)}
-        onClick={() => onChange(light)}
-        type="button"
-      >
-        Light
-      </button>
-      <button
-        style={btnStyle(active === dark)}
-        onClick={() => onChange(dark)}
-        type="button"
-      >
-        Dark
-      </button>
+      {styles.map((s) => (
+        <button
+          key={s.key}
+          style={btnStyle(activeKey === s.key)}
+          onClick={() => onChange(s.key)}
+          type="button"
+        >
+          {s.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -33,7 +30,10 @@ const wrapStyle: React.CSSProperties = {
   top: 12,
   right: 12,
   display: "flex",
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
   gap: 4,
+  maxWidth: 280,
   background: "white",
   borderRadius: 6,
   padding: 4,
@@ -43,9 +43,10 @@ const wrapStyle: React.CSSProperties = {
 const btnStyle = (active: boolean): React.CSSProperties => ({
   border: "none",
   borderRadius: 4,
-  padding: "4px 12px",
+  padding: "4px 10px",
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: 12,
+  whiteSpace: "nowrap",
   background: active ? "#ff9900" : "transparent",
   color: active ? "#232f3e" : "#555",
   fontWeight: active ? 600 : 400,

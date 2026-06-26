@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl, { type Map as MlMap, type Marker as MlMarker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { getAuthHelper } from "../../services/auth";
-import { mapStyleUrl, MAP_NAME, MAP_NAME_DARK } from "../../config/aws";
+import { mapStyleUrl, MAP_STYLES, DEFAULT_MAP_STYLE_KEY } from "../../config/aws";
 import { useAppState } from "../../state/AppState";
 import { StyleSwitcher } from "./StyleSwitcher";
 import { Spinner } from "../shared/Spinner";
@@ -20,19 +20,20 @@ const LINE_SOURCE_ID = "route-lines";
 const LINE_LAYER_ID = "route-lines-layer";
 const LINE_ERROR_LAYER_ID = "route-lines-error-layer";
 
-// Default to the dark OpenData style when a dark map resource is configured,
-// otherwise fall back to the light one.
-const DEFAULT_MAP = MAP_NAME_DARK || MAP_NAME;
+/** Resolve a style key to its V1 Map resource name (falling back to the first). */
+function mapNameForKey(key: string): string {
+  return (MAP_STYLES.find((s) => s.key === key) ?? MAP_STYLES[0]!).mapName;
+}
 
 export function MapCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
   const markerObjs = useRef<MlMarker[]>([]);
   const lineLabelObjs = useRef<MlMarker[]>([]);
-  const appliedMap = useRef(DEFAULT_MAP); // the style currently applied to the map
+  const appliedKey = useRef(DEFAULT_MAP_STYLE_KEY); // style key currently applied
   const [ready, setReady] = useState(false);
   const [styleEpoch, setStyleEpoch] = useState(0); // bumps when a new style finishes loading
-  const [activeMap, setActiveMap] = useState(DEFAULT_MAP);
+  const [activeKey, setActiveKey] = useState(DEFAULT_MAP_STYLE_KEY);
   const { markers, routeLines, pick, requestPick } = useAppState();
 
   // Initialize the map once.
@@ -46,7 +47,7 @@ export function MapCanvas() {
 
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: mapStyleUrl(activeMap),
+        style: mapStyleUrl(mapNameForKey(activeKey)),
         center: [-122.3321, 47.6062], // Seattle
         zoom: 10,
         ...authHelper.getMapAuthenticationOptions(), // injects transformRequest
@@ -76,11 +77,11 @@ export function MapCanvas() {
   // map loads with the style it was constructed with).
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready || activeMap === appliedMap.current) return;
-    appliedMap.current = activeMap;
-    map.setStyle(mapStyleUrl(activeMap));
+    if (!map || !ready || activeKey === appliedKey.current) return;
+    appliedKey.current = activeKey;
+    map.setStyle(mapStyleUrl(mapNameForKey(activeKey)));
     map.once("idle", () => setStyleEpoch((e) => e + 1));
-  }, [activeMap, ready]);
+  }, [activeKey, ready]);
 
   // Route map clicks to a panel's pick request. In sticky (click-to-add) mode
   // the request stays active so the user can keep clicking; otherwise it's
@@ -213,14 +214,7 @@ export function MapCanvas() {
           <Spinner /> <span style={{ marginLeft: 8 }}>Loading map…</span>
         </div>
       )}
-      {MAP_NAME_DARK && (
-        <StyleSwitcher
-          light={MAP_NAME}
-          dark={MAP_NAME_DARK}
-          active={activeMap}
-          onChange={setActiveMap}
-        />
-      )}
+      <StyleSwitcher styles={MAP_STYLES} activeKey={activeKey} onChange={setActiveKey} />
       {pick && (
         <div style={pickBannerStyle}>
           {pick.kind === "dest"
