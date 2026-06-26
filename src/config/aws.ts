@@ -36,10 +36,34 @@ export const COGNITO_UNAUTH_ROLE_ARN = required(
   "VITE_COGNITO_UNAUTH_ROLE_ARN",
 );
 
-export const MAP_NAME = required(import.meta.env.VITE_MAP_NAME, "VITE_MAP_NAME");
+/**
+ * The four OpenData map styles. Each is a separate V1 Map resource (the V1 Maps
+ * API is resource-based: one style per resource). Each entry's `mapName` comes
+ * from an env var; styles without a configured resource are filtered out so the
+ * switcher only ever shows ones that actually exist.
+ */
+export interface MapStyle {
+  key: string;
+  label: string;
+  mapName: string;
+}
 
-/** Optional second (dark) Map resource. Empty string => no dark switcher. */
-export const MAP_NAME_DARK = import.meta.env.VITE_MAP_NAME_DARK ?? "";
+const ALL_MAP_STYLES: MapStyle[] = [
+  { key: "standard-light", label: "Standard Light", mapName: import.meta.env.VITE_MAP_NAME ?? "" },
+  { key: "standard-dark", label: "Standard Dark", mapName: import.meta.env.VITE_MAP_NAME_DARK ?? "" },
+  { key: "viz-light", label: "Visualization Light", mapName: import.meta.env.VITE_MAP_NAME_VIZ_LIGHT ?? "" },
+  { key: "viz-dark", label: "Visualization Dark", mapName: import.meta.env.VITE_MAP_NAME_VIZ_DARK ?? "" },
+];
+
+export const MAP_STYLES: MapStyle[] = ALL_MAP_STYLES.filter((s) => s.mapName.trim() !== "");
+
+if (MAP_STYLES.length === 0) {
+  throw new Error("No map styles configured. Set at least VITE_MAP_NAME in .env.local.");
+}
+
+/** Default style key: prefer Standard Dark, else the first available. */
+export const DEFAULT_MAP_STYLE_KEY =
+  MAP_STYLES.find((s) => s.key === "standard-dark")?.key ?? MAP_STYLES[0]!.key;
 
 export const VALIDATION_BUCKET = required(
   import.meta.env.VITE_VALIDATION_BUCKET,
