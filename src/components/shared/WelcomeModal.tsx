@@ -29,8 +29,8 @@ export function WelcomeModal({ onClose }: { onClose: () => void }) {
         <p style={bodyStyle}>
           This is a demo app showcasing the APIs and technologies I (Philip Ko)
           have built throughout my career. I have built APIs and services that
-          brought in $millions in annual revenue, and re-architected crucial
-          systems to save $millions in annual cost.
+          brought in $ millions in annual revenue, and re-architected crucial
+          systems to save $ millions in annual cost.
         </p>
         <p style={bodyStyle}>
           Here, you can try out some of the technologies I have built — an
