@@ -16,7 +16,18 @@ import type { AddressInput, ValidationResult, MatchConfidence } from "../types";
 type ParquetWasm = typeof import("parquet-wasm");
 let wasmPromise: Promise<ParquetWasm> | null = null;
 async function loadWasm(): Promise<ParquetWasm> {
-  if (!wasmPromise) wasmPromise = import("parquet-wasm");
+  if (!wasmPromise) {
+    wasmPromise = (async () => {
+      const mod = await import("parquet-wasm");
+      // wasm-bindgen modules expose a default init() that must be awaited before
+      // any exported function is called — otherwise calls hit the not-yet-
+      // instantiated WASM and throw "Cannot read properties of undefined
+      // (reading '__wbindgen_add_to_stack_pointer')". With no argument it loads
+      // the bundled .wasm (vite-plugin-wasm resolves the URL).
+      await mod.default();
+      return mod;
+    })();
+  }
   return wasmPromise;
 }
 
