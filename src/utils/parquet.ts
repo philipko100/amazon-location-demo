@@ -11,7 +11,7 @@
  * documented contract.
  */
 import { tableFromArrays, tableFromIPC, tableToIPC, type Table } from "apache-arrow";
-import type { AddressInput, ValidationResult, MatchConfidence } from "../types";
+import type { EnrichedAddress, ValidationResult, MatchConfidence } from "../types";
 
 type ParquetWasm = typeof import("parquet-wasm");
 let wasmPromise: Promise<ParquetWasm> | null = null;
@@ -34,16 +34,41 @@ async function loadWasm(): Promise<ParquetWasm> {
 /**
  * Encode addresses to Parquet for a ValidateAddress job.
  *
- * Per the input schema, a single-line address goes entirely in AddressLines_1,
- * and the docs warn AGAINST mixing a full address with AddressComponents_*. So
- * we submit the complete (enriched) address as free-form AddressLines_1 and omit
- * the structured component columns — which also sidesteps the columnar
- * "AddressComponents_Locality must have length at least 1" failure entirely.
+ * We submit the full (enriched) address as free-form AddressLines_1 — the schema
+ * allows a single-line address there. The schema's guidance is that you MAY also
+ * supply last-line components (Locality, Region, Country, PostalCode) via
+ * AddressComponents alongside AddressLines; we include AddressComponents_Country
+ * because the job requires a recognized country in AddressLines OR
+ * AddressComponents.Country, and the free-form label doesn't reliably carry one.
+ * Country is always populated (defaults to USA), so the column is never empty.
  */
-export async function addressesToParquet(addresses: AddressInput[]): Promise<Uint8Array> {
+/**
+ * Normalize a country value to a code the ValidateAddress job recognizes.
+ * Handles user input (US, UK, GB, "United States") and Autocomplete codes
+ * (USA, GBR). Note "UK" is NOT an ISO code — it must be GB/GBR. Falls back to
+ * USA so AddressComponents_Country is never empty (Jobs supports US/CA/UK/AU).
+ */
+function normalizeCountry(raw: string | undefined): string {
+  const v = (raw ?? "").trim().toUpperCase();
+  if (!v) return "USA";
+  const map: Record<string, string> = {
+    US: "USA", USA: "USA", "UNITED STATES": "USA",
+    CA: "CAN", CAN: "CAN", CANADA: "CAN",
+    UK: "GBR", GB: "GBR", GBR: "GBR", "UNITED KINGDOM": "GBR", "GREAT BRITAIN": "GBR",
+    AU: "AUS", AUS: "AUS", AUSTRALIA: "AUS",
+  };
+  return map[v] ?? v;
+}
+
+export async function addressesToParquet(addresses: EnrichedAddress[]): Promise<Uint8Array> {
   const wasm = await loadWasm();
 
-  const fullLine = (a: AddressInput) =>
+  // Prefer the complete standardized address Autocomplete produced
+  // (enrichedLabel) as the validation input — that's the whole point of the
+  // enrichment pass. Fall back to assembling the user's fields when a row wasn't
+  // enriched (e.g. Autocomplete returned no match).
+  const fullLine = (a: EnrichedAddress) =>
+    a.enrichedLabel?.trim() ||
     a.line1?.trim() ||
     [a.line1, a.locality, a.region, a.postalCode, a.country]
       .map((s) => s?.trim())
@@ -53,6 +78,7 @@ export async function addressesToParquet(addresses: AddressInput[]): Promise<Uin
   const table = tableFromArrays({
     Id: addresses.map((a) => a.id),
     AddressLines_1: addresses.map(fullLine),
+    AddressComponents_Country: addresses.map((a) => normalizeCountry(a.country)),
   });
 
   // apache-arrow -> Arrow IPC stream -> parquet-wasm Table -> Parquet bytes.
