@@ -1,0 +1,47 @@
+:root {
+  --aws-navy: #232f3e;
+  --aws-orange: #ff9900;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: #fff;
+  color: #16191f;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Spinner used by components/shared/Spinner.tsx */
+.als-spinner {
+  display: inline-block;
+  border-style: solid;
+  border-color: rgba(35, 47, 62, 0.2);
+  border-top-color: var(--aws-orange);
+  border-radius: 50%;
+  animation: als-spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes als-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* MapLibre popups inherit the app font */
+.maplibregl-popup-content {
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+}
