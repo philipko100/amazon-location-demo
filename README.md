@@ -13,8 +13,8 @@ The interesting bit is that these straddle **two API generations**. A single
 **Amazon Cognito Identity Pool (unauthenticated)** is the one credential source
 that authenticates all of them — it vends short-lived SigV4 credentials scoped
 to one IAM role, which covers V1 map tiles (via MapLibre `transformRequest`),
-V2 GeoRoutes (via the SDK), the Jobs API (via raw SigV4 `fetch`), and the S3
-bucket the Jobs API uses for Parquet I/O.
+V2 GeoRoutes and the Jobs API (both via the AWS SDK), and the S3 bucket the
+Jobs API uses for Parquet I/O.
 
 ## Quick start
 
@@ -26,6 +26,41 @@ npm run dev                  # http://localhost:5173
 
 Prefer to wire it up by hand? `cp .env.example .env.local` and fill in the
 values (see "AWS setup" below).
+
+## Prerequisites
+
+This is a public, unauthenticated demo — deploy it to a **personal AWS account**,
+not a corporate/work one. Corporate accounts typically block unauthenticated
+Cognito pools and public Amplify apps via org policy, and aren't the right place
+for a personal public site.
+
+One-time setup before running `setup-aws.sh`:
+
+1. **Personal AWS account** — create one at [aws.amazon.com](https://aws.amazon.com)
+   if needed (requires a card; this demo runs near the free tier and the script
+   adds a Budgets alarm as a safety net).
+2. **CLI credentials** (in the Console, once):
+   - IAM → Users → Create user (e.g. `cli-admin`) → attach **AdministratorAccess**
+     (broad perms are needed to create IAM roles / Cognito / S3 / Budgets; scope
+     down later). Do **not** create access keys on the root user.
+   - On the user → Security credentials → Create access key → "Command Line
+     Interface (CLI)". Copy the key id + secret.
+3. **A dedicated named profile** (do not overwrite an existing `default`):
+   ```bash
+   aws configure --profile personal
+   # region: us-east-1   output: json
+   ```
+4. **Confirm the target account** before provisioning:
+   ```bash
+   aws sts get-caller-identity --profile personal   # verify it's YOUR personal account id
+   ```
+5. **Provision** (the script prompts to confirm the account first):
+   ```bash
+   AWS_PROFILE=personal ./setup-aws.sh
+   ```
+
+After it runs, **confirm the budget email** AWS sends to the alert address, or
+the cost alarm won't fire.
 
 ## Tech stack
 
