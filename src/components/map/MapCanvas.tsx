@@ -29,7 +29,7 @@ export function MapCanvas() {
   const [ready, setReady] = useState(false);
   const [styleEpoch, setStyleEpoch] = useState(0); // bumps when a new style finishes loading
   const [activeMap, setActiveMap] = useState(MAP_NAME);
-  const { markers, routeLines, pickHandler, requestPick } = useAppState();
+  const { markers, routeLines, pick, requestPick } = useAppState();
 
   // Initialize the map once.
   useEffect(() => {
@@ -78,31 +78,33 @@ export function MapCanvas() {
     map.once("idle", () => setStyleEpoch((e) => e + 1));
   }, [activeMap, ready]);
 
-  // Route map clicks to a panel's pick handler when one is registered.
+  // Route map clicks to a panel's pick request. In sticky (click-to-add) mode
+  // the request stays active so the user can keep clicking; otherwise it's
+  // one-shot and clears after a single click.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const handler = (e: maplibregl.MapMouseEvent) => {
-      if (pickHandler) {
-        pickHandler([e.lngLat.lng, e.lngLat.lat]);
-        requestPick(null);
+      if (pick) {
+        pick.onPick([e.lngLat.lng, e.lngLat.lat]);
+        if (!pick.sticky) requestPick(null);
       }
     };
     map.on("click", handler);
     return () => {
       map.off("click", handler);
     };
-  }, [pickHandler, requestPick]);
+  }, [pick, requestPick]);
 
-  // Let the user cancel pick mode with Escape (brings the panel back).
+  // Let the user exit pick mode with Escape.
   useEffect(() => {
-    if (!pickHandler) return;
+    if (!pick) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") requestPick(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pickHandler, requestPick]);
+  }, [pick, requestPick]);
 
   // Reflect shared markers onto the map.
   useEffect(() => {
@@ -215,8 +217,15 @@ export function MapCanvas() {
           onChange={setActiveMap}
         />
       )}
-      {pickHandler && (
-        <div style={pickBannerStyle}>Click the map to pick a location · Esc to cancel</div>
+      {pick && (
+        <div style={pickBannerStyle}>
+          {pick.kind === "dest"
+            ? "Click the map to add destinations"
+            : pick.kind === "origin"
+              ? "Click the map to add origins"
+              : "Click the map to pick a location"}
+          {pick.sticky ? " · keep clicking · Esc when done" : " · Esc to cancel"}
+        </div>
       )}
     </div>
   );
@@ -233,9 +242,12 @@ const overlayStyle: React.CSSProperties = {
 
 const pickBannerStyle: React.CSSProperties = {
   position: "absolute",
+  // Pin to the top-center of the viewport and sit above the panel (zIndex 10)
+  // so the instruction stays visible while picking, even on narrow screens.
   top: 12,
   left: "50%",
   transform: "translateX(-50%)",
+  zIndex: 20,
   background: "#232f3e",
   color: "white",
   padding: "6px 14px",

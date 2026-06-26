@@ -20,7 +20,7 @@ const MATCH_COLOR = "#16a34a";
 export function BulkValidationPanel() {
   const [raw, setRaw] = useState("");
   const { stage, jobStatus, results, error, run } = useBulkValidation();
-  const { setMarkers, setTab } = useAppState();
+  const { setMarkersFor, setTab } = useAppState();
 
   const addresses = parseAddresses(raw);
   const busy = stage !== "idle" && stage !== "done" && stage !== "error";
@@ -36,7 +36,7 @@ export function BulkValidationPanel() {
         color: MATCH_COLOR,
         label: r.outputLabel ?? r.inputLabel,
       }));
-    setMarkers(markers);
+    setMarkersFor("validation", markers);
     setTab("map");
   }
 

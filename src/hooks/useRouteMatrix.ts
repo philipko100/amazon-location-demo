@@ -101,5 +101,10 @@ export function useRouteMatrix() {
     [],
   );
 
-  return { result, loading, error, run };
+  const reset = useCallback(() => {
+    setResult(null);
+    setError(null);
+  }, []);
+
+  return { result, loading, error, run, reset };
 }

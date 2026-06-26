@@ -9,13 +9,7 @@ import { useEffect, useState } from "react";
 import type { LngLat, NamedPoint, TravelMode } from "../../types";
 import { useRouteMatrix } from "../../hooks/useRouteMatrix";
 import { formatLngLat, formatDistance, formatDuration } from "../../utils/format";
-import {
-  MAX_ORIGINS,
-  MAX_DESTINATIONS,
-  API_MAX_ORIGINS,
-  API_MAX_DESTINATIONS,
-  API_MAX_MATRIX,
-} from "../../config/limits";
+import { MAX_ORIGINS, MAX_DESTINATIONS, API_MAX_MATRIX } from "../../config/limits";
 import { useAppState, type MapMarker, type RouteLine } from "../../state/AppState";
 import { PointList } from "./PointList";
 import { MatrixGrid } from "./MatrixGrid";
@@ -31,19 +25,20 @@ export function RouteMatrixPanel() {
   const [destinations, setDestinations] = useState<NamedPoint[]>([]);
   const [mode, setMode] = useState<TravelMode>("Car");
   const [unit, setUnit] = useState<"km" | "mi">("km");
-  const { result, loading, error, run } = useRouteMatrix();
-  const { setMarkers, setRouteLines, requestPick } = useAppState();
+  const { result, loading, error, run, reset } = useRouteMatrix();
+  const { setMarkersFor, setRouteLines, pick, requestPick } = useAppState();
+  // Which list (if any) the user is currently placing on the map via click-to-add.
+  const placingKind = pick?.kind ?? null;
 
-  // Keep the map's markers derived from the current points. Doing this in an
-  // effect (rather than inside each mutation) means it always reflects the
-  // latest state — no stale-closure risk from imperative sync calls.
+  // Keep this feature's markers derived from the current points. Writing only
+  // the "matrix" slice means the validation feature's markers are left intact.
   useEffect(() => {
     const markers: MapMarker[] = [
       ...origins.map((o) => ({ id: `o-${o.id}`, position: o.position, color: ORIGIN_COLOR, label: o.label })),
       ...destinations.map((d) => ({ id: `d-${d.id}`, position: d.position, color: DEST_COLOR, label: d.label })),
     ];
-    setMarkers(markers);
-  }, [origins, destinations, setMarkers]);
+    setMarkersFor("matrix", markers);
+  }, [origins, destinations, setMarkersFor]);
 
   // Draw a line for every origin→destination pair once a matrix is calculated,
   // each labeled with that route's distance · time. Cleared when inputs change
@@ -73,9 +68,6 @@ export function RouteMatrixPanel() {
     setRouteLines(lines);
   }, [result, unit, setRouteLines]);
 
-  // Clear route lines when this panel unmounts so they don't persist on the map.
-  useEffect(() => () => setRouteLines([]), [setRouteLines]);
-
   function addPoint(kind: "origin" | "dest", position: LngLat, label?: string) {
     const point: NamedPoint = {
       id: crypto.randomUUID(),
@@ -99,12 +91,36 @@ export function RouteMatrixPanel() {
     }
   }
 
-  // The map is always mounted behind this panel, so its visible area is already
-  // clickable — we just register the pick handler (no tab switch needed). The
-  // MapCanvas shows a "Click the map to pick a location" banner while active.
-  function pickFromMap(kind: "origin" | "dest") {
-    requestPick((pos) => addPoint(kind, pos));
+  // Exit sticky placing mode once the list being placed is full, so further map
+  // clicks aren't silently dropped while the banner still says "keep clicking".
+  useEffect(() => {
+    if (placingKind === "origin" && origins.length >= MAX_ORIGINS) requestPick(null);
+    if (placingKind === "dest" && destinations.length >= MAX_DESTINATIONS) requestPick(null);
+  }, [placingKind, origins.length, destinations.length, requestPick]);
+
+  // Toggle sticky "click to add" mode for a list. While active, every map click
+  // appends a point of that kind — no need to re-press a button between clicks,
+  // and the panel stays in place. Clicking the active button again turns it off.
+  function togglePlacing(kind: "origin" | "dest") {
+    if (placingKind === kind) {
+      requestPick(null);
+    } else {
+      requestPick({ kind, sticky: true, onPick: (pos) => addPoint(kind, pos) });
+    }
   }
+
+  // Clear everything from the map without making a new request: drop all points
+  // (markers follow via the effect), the calculated matrix (lines follow), and
+  // exit any placing mode.
+  function clearAll() {
+    requestPick(null);
+    setOrigins([]);
+    setDestinations([]);
+    reset();
+  }
+
+  const hasAnything =
+    origins.length > 0 || destinations.length > 0 || result !== null;
 
   return (
     <div style={panelStyle}>
@@ -113,9 +129,8 @@ export function RouteMatrixPanel() {
         Add origins and destinations, then calculate distance &amp; time for every
         pair. This demo is limited to {MAX_ORIGINS} origins and{" "}
         {MAX_DESTINATIONS} destinations. The CalculateRouteMatrix API itself
-        scales to {API_MAX_ORIGINS.toLocaleString()} origins ×{" "}
-        {API_MAX_DESTINATIONS.toLocaleString()} destinations —{" "}
-        {API_MAX_MATRIX.toLocaleString()} routes in a single request.
+        scales to {API_MAX_MATRIX.toLocaleString("en-US")} routes in a single
+        synchronous request.
       </p>
 
       <div style={columnsStyle}>
@@ -124,18 +139,20 @@ export function RouteMatrixPanel() {
           color={ORIGIN_COLOR}
           points={origins}
           max={MAX_ORIGINS}
+          placing={placingKind === "origin"}
           onAdd={(pos, label) => addPoint("origin", pos, label)}
           onRemove={(id) => removePoint("origin", id)}
-          onPickFromMap={() => pickFromMap("origin")}
+          onTogglePlacing={() => togglePlacing("origin")}
         />
         <PointList
           title="Destinations"
           color={DEST_COLOR}
           points={destinations}
           max={MAX_DESTINATIONS}
+          placing={placingKind === "dest"}
           onAdd={(pos, label) => addPoint("dest", pos, label)}
           onRemove={(id) => removePoint("dest", id)}
-          onPickFromMap={() => pickFromMap("dest")}
+          onTogglePlacing={() => togglePlacing("dest")}
         />
       </div>
 
@@ -158,6 +175,9 @@ export function RouteMatrixPanel() {
         </label>
         <Button onClick={() => run(origins, destinations, mode)} disabled={loading}>
           {loading ? <Spinner /> : "Calculate"}
+        </Button>
+        <Button variant="ghost" onClick={clearAll} disabled={loading || !hasAnything}>
+          Clear
         </Button>
       </div>
 

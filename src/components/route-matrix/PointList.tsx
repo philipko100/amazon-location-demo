@@ -8,9 +8,11 @@ interface Props {
   color: string;
   points: NamedPoint[];
   max: number;
+  /** True when click-to-add mode is currently active for this list. */
+  placing: boolean;
   onAdd: (position: LngLat, label?: string) => void;
   onRemove: (id: string) => void;
-  onPickFromMap: () => void;
+  onTogglePlacing: () => void;
 }
 
 /**
@@ -34,7 +36,16 @@ function parseLngLat(text: string): { point: LngLat } | { error: string } {
   return { point: [lng, lat] };
 }
 
-export function PointList({ title, color, points, max, onAdd, onRemove, onPickFromMap }: Props) {
+export function PointList({
+  title,
+  color,
+  points,
+  max,
+  placing,
+  onAdd,
+  onRemove,
+  onTogglePlacing,
+}: Props) {
   const [text, setText] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const atCapacity = points.length >= max;
@@ -79,12 +90,12 @@ export function PointList({ title, color, points, max, onAdd, onRemove, onPickFr
       </div>
       {err && <div style={errTextStyle}>{err}</div>}
       <Button
-        variant="ghost"
-        onClick={onPickFromMap}
-        disabled={atCapacity}
+        variant={placing ? "primary" : "ghost"}
+        onClick={onTogglePlacing}
+        disabled={atCapacity && !placing}
         style={{ marginTop: 4, fontSize: 12, padding: "4px 8px", width: "100%" }}
       >
-        📍 Pick on map
+        {placing ? "📍 Click map to add… (done)" : "📍 Click to add on map"}
       </Button>
       <ul style={listStyle}>
         {points.map((p) => (

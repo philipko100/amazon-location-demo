@@ -16,6 +16,9 @@ import type { LngLat } from "../types";
 
 export type FeatureTab = "map" | "matrix" | "validation";
 
+/** Which feature owns a set of markers, so features don't clobber each other. */
+export type MarkerSource = "matrix" | "validation";
+
 export interface MapMarker {
   id: string;
   position: LngLat;
@@ -32,47 +35,66 @@ export interface RouteLine {
   error?: boolean; // true when the pair had no route
 }
 
-/** When set, the next map click is routed to this callback instead of normal handling. */
-type PickHandler = ((position: LngLat) => void) | null;
+/**
+ * A request for the next map click(s) to be routed to `onPick` instead of normal
+ * handling. When `sticky` is true the request stays active after each click
+ * (click-to-add mode) until explicitly cleared; otherwise it's one-shot. `kind`
+ * lets the requesting panel know which list it's currently adding to.
+ */
+export interface PickRequest {
+  onPick: (position: LngLat) => void;
+  sticky?: boolean;
+  kind?: "origin" | "dest";
+}
 
 interface AppStateValue {
   tab: FeatureTab;
   setTab: (t: FeatureTab) => void;
+  /** All markers across features, flattened for the map to render. */
   markers: MapMarker[];
-  setMarkers: (m: MapMarker[]) => void;
+  /** Replace just one feature's markers; other features' markers are untouched. */
+  setMarkersFor: (source: MarkerSource, markers: MapMarker[]) => void;
   routeLines: RouteLine[];
   setRouteLines: (l: RouteLine[]) => void;
-  pickHandler: PickHandler;
-  requestPick: (handler: PickHandler) => void;
+  pick: PickRequest | null;
+  requestPick: (req: PickRequest | null) => void;
 }
 
 const Ctx = createContext<AppStateValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [tab, setTabState] = useState<FeatureTab>("map");
-  const [markers, setMarkers] = useState<MapMarker[]>([]);
+  // Markers are kept per-feature so the route-matrix and validation features
+  // can both show their own pins without overwriting each other.
+  const [markersBySource, setMarkersBySource] = useState<Record<MarkerSource, MapMarker[]>>({
+    matrix: [],
+    validation: [],
+  });
   const [routeLines, setRouteLines] = useState<RouteLine[]>([]);
-  const [pickHandler, setPickHandler] = useState<PickHandler>(null);
+  const [pick, setPick] = useState<PickRequest | null>(null);
 
-  // requestPick stores a function; wrap so setState doesn't treat it as an
-  // updater. useCallback keeps its identity stable so consumers' effects that
-  // depend on it (e.g. MapCanvas click/keydown listeners) don't churn.
-  const requestPick = useCallback(
-    (handler: PickHandler) => setPickHandler(() => handler),
-    [],
+  const setMarkersFor = useCallback((source: MarkerSource, next: MapMarker[]) => {
+    setMarkersBySource((prev) => ({ ...prev, [source]: next }));
+  }, []);
+
+  const markers = useMemo(
+    () => [...markersBySource.matrix, ...markersBySource.validation],
+    [markersBySource],
   );
 
-  // Switching tabs must cancel any in-progress map pick: otherwise the pick
-  // callback would target a panel that just unmounted, silently dropping the
-  // point and leaving the new tab's panel slid off-screen.
+  const requestPick = useCallback((req: PickRequest | null) => setPick(req), []);
+
+  // Switching tabs cancels any in-progress map pick (the click-to-add mode
+  // belongs to a specific panel). Panels stay mounted, so their points/markers
+  // persist — only the transient pick mode is reset.
   const setTab = useCallback((t: FeatureTab) => {
-    setPickHandler(null);
+    setPick(null);
     setTabState(t);
   }, []);
 
   const value = useMemo<AppStateValue>(
-    () => ({ tab, setTab, markers, setMarkers, routeLines, setRouteLines, pickHandler, requestPick }),
-    [tab, setTab, markers, routeLines, pickHandler, requestPick],
+    () => ({ tab, setTab, markers, setMarkersFor, routeLines, setRouteLines, pick, requestPick }),
+    [tab, setTab, markers, setMarkersFor, routeLines, setRouteLines, pick, requestPick],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

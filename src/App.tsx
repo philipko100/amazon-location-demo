@@ -15,11 +15,7 @@ const TABS: { id: FeatureTab; label: string }[] = [
 ];
 
 export function App() {
-  const { tab, setTab, pickHandler } = useAppState();
-  // While a panel is asking the user to pick a point on the map, slide the
-  // panel out of the way so the full map is clickable (it stays mounted, so the
-  // panel's state survives). It slides back as soon as the click registers.
-  const picking = pickHandler !== null;
+  const { tab, setTab } = useAppState();
 
   return (
     <div style={rootStyle}>
@@ -48,12 +44,14 @@ export function App() {
           <MapCanvas />
         </div>
 
-        {tab !== "map" && (
-          <aside style={{ ...panelWrapStyle, ...(picking ? panelHiddenStyle : null) }}>
-            {tab === "matrix" && <RouteMatrixPanel />}
-            {tab === "validation" && <BulkValidationPanel />}
-          </aside>
-        )}
+        {/* Both panels stay mounted so their state (points, results, markers,
+            lines) persists across tab switches; we just toggle visibility. */}
+        <aside style={{ ...panelWrapStyle, ...(tab === "matrix" ? null : panelHiddenStyle) }}>
+          <RouteMatrixPanel />
+        </aside>
+        <aside style={{ ...panelWrapStyle, ...(tab === "validation" ? null : panelHiddenStyle) }}>
+          <BulkValidationPanel />
+        </aside>
       </main>
     </div>
   );
@@ -98,7 +96,8 @@ const panelWrapStyle: React.CSSProperties = {
   zIndex: 10,
   transition: "transform 0.2s ease",
 };
-// Slide the panel fully off the right edge during map-pick mode.
+// Slide an inactive panel off the right edge (kept mounted to preserve state).
 const panelHiddenStyle: React.CSSProperties = {
   transform: "translateX(100%)",
+  pointerEvents: "none",
 };
