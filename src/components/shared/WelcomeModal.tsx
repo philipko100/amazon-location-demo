@@ -59,7 +59,7 @@ const dialogStyle: React.CSSProperties = {
   background: "white",
   borderRadius: 16,
   padding: "36px 32px 32px",
-  maxWidth: 640,
+  maxWidth: 760,
   width: "100%",
   textAlign: "center",
   // Accent bar along the top + soft glow for a bit more pop.
@@ -80,7 +80,7 @@ const titleStyle: React.CSSProperties = {
 };
 const bodyStyle: React.CSSProperties = {
   margin: "0 auto 14px",
-  maxWidth: 520,
+  maxWidth: 600,
   fontSize: 15,
   lineHeight: 1.6,
   color: "#374151",
