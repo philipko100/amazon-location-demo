@@ -11,7 +11,7 @@
  * documented contract.
  */
 import { tableFromArrays, tableFromIPC, tableToIPC, type Table } from "apache-arrow";
-import type { AddressInput, ValidationResult, MatchConfidence } from "../types";
+import type { EnrichedAddress, ValidationResult, MatchConfidence } from "../types";
 
 type ParquetWasm = typeof import("parquet-wasm");
 let wasmPromise: Promise<ParquetWasm> | null = null;
@@ -60,10 +60,15 @@ function normalizeCountry(raw: string | undefined): string {
   return map[v] ?? v;
 }
 
-export async function addressesToParquet(addresses: AddressInput[]): Promise<Uint8Array> {
+export async function addressesToParquet(addresses: EnrichedAddress[]): Promise<Uint8Array> {
   const wasm = await loadWasm();
 
-  const fullLine = (a: AddressInput) =>
+  // Prefer the complete standardized address Autocomplete produced
+  // (enrichedLabel) as the validation input — that's the whole point of the
+  // enrichment pass. Fall back to assembling the user's fields when a row wasn't
+  // enriched (e.g. Autocomplete returned no match).
+  const fullLine = (a: EnrichedAddress) =>
+    a.enrichedLabel?.trim() ||
     a.line1?.trim() ||
     [a.line1, a.locality, a.region, a.postalCode, a.country]
       .map((s) => s?.trim())
