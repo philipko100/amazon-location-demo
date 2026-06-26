@@ -11,6 +11,7 @@
 import { useCallback, useState } from "react";
 import { CalculateRouteMatrixCommand } from "@aws-sdk/client-geo-routes";
 import { getRoutesClient } from "../services/routesClient";
+import { MAX_ORIGINS, MAX_DESTINATIONS } from "../config/limits";
 import type { LngLat, MatrixCell, NamedPoint, TravelMode } from "../types";
 
 /** Bounding box [west, south, east, north] padded around all points. */
@@ -78,6 +79,13 @@ export function useRouteMatrix() {
     async (origins: NamedPoint[], destinations: NamedPoint[], mode: TravelMode) => {
       if (origins.length === 0 || destinations.length === 0) {
         setError("Add at least one origin and one destination.");
+        return;
+      }
+      // Hard cap at the call site (defense in depth behind the UI caps).
+      if (origins.length > MAX_ORIGINS || destinations.length > MAX_DESTINATIONS) {
+        setError(
+          `This demo is limited to ${MAX_ORIGINS} origins and ${MAX_DESTINATIONS} destinations.`,
+        );
         return;
       }
       setLoading(true);

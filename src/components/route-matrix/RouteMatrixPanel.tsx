@@ -8,6 +8,7 @@
 import { useState } from "react";
 import type { LngLat, NamedPoint, TravelMode } from "../../types";
 import { useRouteMatrix } from "../../hooks/useRouteMatrix";
+import { MAX_ORIGINS, MAX_DESTINATIONS } from "../../config/limits";
 import { useAppState, type MapMarker } from "../../state/AppState";
 import { PointList } from "./PointList";
 import { MatrixGrid } from "./MatrixGrid";
@@ -35,6 +36,9 @@ export function RouteMatrixPanel() {
   }
 
   function addPoint(kind: "origin" | "dest", position: LngLat, label?: string) {
+    // Enforce the demo cap; ignore adds beyond the limit.
+    if (kind === "origin" && origins.length >= MAX_ORIGINS) return;
+    if (kind === "dest" && destinations.length >= MAX_DESTINATIONS) return;
     const point: NamedPoint = {
       id: crypto.randomUUID(),
       label: label ?? `${position[1].toFixed(4)}, ${position[0].toFixed(4)}`,
@@ -73,8 +77,8 @@ export function RouteMatrixPanel() {
       <h2 style={h2Style}>Route Matrix</h2>
       <p style={hintStyle}>
         Add origins and destinations, then calculate distance &amp; time for every
-        pair. Up to ~500×500 with a routing boundary; this demo targets a handful
-        each.
+        pair. This demo is limited to {MAX_ORIGINS} origins and{" "}
+        {MAX_DESTINATIONS} destinations.
       </p>
 
       <div style={columnsStyle}>
@@ -82,6 +86,7 @@ export function RouteMatrixPanel() {
           title="Origins"
           color={ORIGIN_COLOR}
           points={origins}
+          max={MAX_ORIGINS}
           onAdd={(pos, label) => addPoint("origin", pos, label)}
           onRemove={(id) => removePoint("origin", id)}
           onPickFromMap={() => pickFromMap("origin")}
@@ -90,6 +95,7 @@ export function RouteMatrixPanel() {
           title="Destinations"
           color={DEST_COLOR}
           points={destinations}
+          max={MAX_DESTINATIONS}
           onAdd={(pos, label) => addPoint("dest", pos, label)}
           onRemove={(id) => removePoint("dest", id)}
           onPickFromMap={() => pickFromMap("dest")}

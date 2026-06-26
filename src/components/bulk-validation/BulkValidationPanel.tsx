@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { parseAddresses } from "../../utils/csv";
 import { useBulkValidation } from "../../hooks/useBulkValidation";
+import { MAX_ADDRESSES } from "../../config/limits";
 import { useAppState, type MapMarker } from "../../state/AppState";
 import { AddressUploader } from "./AddressUploader";
 import { ValidationProgress } from "./ValidationProgress";
@@ -23,6 +24,7 @@ export function BulkValidationPanel() {
 
   const addresses = parseAddresses(raw);
   const busy = stage !== "idle" && stage !== "done" && stage !== "error";
+  const overLimit = addresses.length > MAX_ADDRESSES;
 
   function plotOnMap() {
     if (!results) return;
@@ -44,13 +46,25 @@ export function BulkValidationPanel() {
       <p style={hintStyle}>
         Paste one address per line, or a CSV with headers
         (line1, city, state, zip, country). Jobs API ValidateAddress supports US,
-        CA, UK, and AU. Runs as an async S3-backed batch job.
+        CA, UK, and AU. Runs as an async S3-backed batch job. This demo is limited
+        to {MAX_ADDRESSES} addresses per run.
       </p>
 
       <AddressUploader value={raw} onChange={setRaw} count={addresses.length} />
 
+      {overLimit && (
+        <p style={{ ...hintStyle, color: "#a12020" }}>
+          {addresses.length} addresses entered — only the demo limit of{" "}
+          {MAX_ADDRESSES} can be submitted. Remove {addresses.length - MAX_ADDRESSES}{" "}
+          to continue.
+        </p>
+      )}
+
       <div style={{ display: "flex", gap: 12, alignItems: "center", margin: "12px 0" }}>
-        <Button onClick={() => run(addresses)} disabled={busy || addresses.length === 0}>
+        <Button
+          onClick={() => run(addresses)}
+          disabled={busy || addresses.length === 0 || overLimit}
+        >
           Validate {addresses.length > 0 ? `(${addresses.length})` : ""}
         </Button>
         {results && results.some((r) => r.position) && (

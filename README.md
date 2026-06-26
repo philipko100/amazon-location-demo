@@ -20,9 +20,12 @@ bucket the Jobs API uses for Parquet I/O.
 
 ```bash
 npm install
-cp .env.example .env.local   # then fill in the values (see "AWS setup" below)
+./setup-aws.sh               # provisions AWS + writes .env.local (see "One-command AWS setup")
 npm run dev                  # http://localhost:5173
 ```
+
+Prefer to wire it up by hand? `cp .env.example .env.local` and fill in the
+values (see "AWS setup" below).
 
 ## Tech stack
 
@@ -191,13 +194,63 @@ src/
 └── main.tsx
 ```
 
-## Deploy
+## One-command AWS setup
 
-Static build — host anywhere:
+Instead of the manual steps above, `setup-aws.sh` provisions everything in
+`us-east-1` and writes `.env.local` for you. It's idempotent (safe to re-run)
+and performs no deletes.
 
 ```bash
-npm run build      # -> dist/
+aws sso login                 # or `aws configure` — must be authenticated first
+./setup-aws.sh                # prompts to confirm the target account
+npm run dev
 ```
 
-Recommended: Amplify Hosting (git-push) or S3 + CloudFront. Remember to add your
-production origin to the S3 bucket CORS `AllowedOrigins`.
+It creates: the Cognito unauth pool + a least-privilege IAM role (with the
+`iam:PassRole` needed to start Jobs), the Jobs execution role, both Map
+resources, a versioned S3 bucket with CORS, and a **monthly AWS Budgets cost
+alarm**. Override defaults with env vars, e.g. `BUDGET_AMOUNT=50
+ALERT_EMAIL=you@example.com AWS_PROFILE=myprofile ./setup-aws.sh`.
+
+## Cost & abuse guardrails (public demo)
+
+This is a public, **unauthenticated** site — anyone with the URL can invoke the
+AWS APIs anonymously. The guardrails:
+
+- **Input caps** (`src/config/limits.ts`): max **15 origins**, **15
+  destinations**, and **20 addresses** per run. These apply UI friction; note
+  they are client-side, so they deter casual overuse but are not a hard ceiling.
+- **Least-privilege IAM**: the unauth role can only call the four demo APIs on
+  the specific map/bucket resources — nothing else in your account.
+- **AWS Budgets alarm**: emails you at 80% of the monthly threshold.
+
+For stronger protection later, consider an API key with HTTP-referer
+restriction for the map, or moving to an authenticated Cognito pool.
+
+## Deploy to AWS Amplify Hosting
+
+`amplify.yml` (Node 20, `npm ci`, `npm run build`, artifacts in `dist/`) is
+included. To deploy:
+
+1. Push this repo to GitHub (done).
+2. In the **Amplify console** → *Create new app* → *Host web app* → connect your
+   GitHub repo and branch. Amplify auto-detects `amplify.yml`.
+3. Add the env vars from `.env.local` under **App settings → Environment
+   variables** (`VITE_AWS_REGION`, `VITE_COGNITO_IDENTITY_POOL_ID`,
+   `VITE_MAP_NAME`, `VITE_MAP_NAME_DARK`, `VITE_VALIDATION_BUCKET`,
+   `VITE_JOBS_EXECUTION_ROLE_ARN`). They're build-time values, baked into the
+   bundle.
+4. Add an SPA rewrite so client routing works: **App settings → Rewrites and
+   redirects** → source `/<*>`, target `/index.html`, type `404-200`.
+5. Deploy. Your site lands at `https://<branch>.<app-id>.amplifyapp.com`.
+
+The S3 CORS rule already allows `https://*.amplifyapp.com`. If you attach a
+**custom domain**, add it to the bucket's CORS `AllowedOrigins`:
+
+```bash
+aws s3api put-bucket-cors --bucket <your-bucket> --region us-east-1 \
+  --cors-configuration '{"CORSRules":[{"AllowedOrigins":["https://yourdomain.com"],"AllowedMethods":["GET","PUT"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"]}]}'
+```
+
+> Heads-up: `npm run build` requires Node 18+. If your machine defaults to an
+> older Node, use Node 20 for the build (Amplify already does via `amplify.yml`).

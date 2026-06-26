@@ -5,7 +5,12 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({ variant = "primary", style, ...rest }: Props) {
-  return <button {...rest} style={{ ...base, ...variants[variant], ...style }} />;
+  const disabledStyle: React.CSSProperties = rest.disabled
+    ? { opacity: 0.5, cursor: "not-allowed" }
+    : {};
+  return (
+    <button {...rest} style={{ ...base, ...variants[variant], ...disabledStyle, ...style }} />
+  );
 }
 
 const base: React.CSSProperties = {

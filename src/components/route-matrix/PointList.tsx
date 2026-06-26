@@ -7,6 +7,7 @@ interface Props {
   title: string;
   color: string;
   points: NamedPoint[];
+  max: number;
   onAdd: (position: LngLat, label?: string) => void;
   onRemove: (id: string) => void;
   onPickFromMap: () => void;
@@ -19,11 +20,13 @@ function parseLngLat(text: string): LngLat | null {
   return [m[0]!, m[1]!];
 }
 
-export function PointList({ title, color, points, onAdd, onRemove, onPickFromMap }: Props) {
+export function PointList({ title, color, points, max, onAdd, onRemove, onPickFromMap }: Props) {
   const [text, setText] = useState("");
   const [err, setErr] = useState(false);
+  const atCapacity = points.length >= max;
 
   function submit() {
+    if (atCapacity) return;
     const pos = parseLngLat(text);
     if (!pos) {
       setErr(true);
@@ -37,23 +40,30 @@ export function PointList({ title, color, points, onAdd, onRemove, onPickFromMap
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
       <h3 style={{ fontSize: 14, margin: "0 0 6px", color }}>
-        {title} ({points.length})
+        {title} ({points.length}/{max})
       </h3>
       <div style={{ display: "flex", gap: 4 }}>
         <input
           style={{ ...inputStyle, borderColor: err ? "#dc2626" : "#ccc" }}
-          placeholder="lng, lat"
+          placeholder={atCapacity ? "limit reached" : "lng, lat"}
           value={text}
+          disabled={atCapacity}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
         />
-        <Button variant="ghost" onClick={submit} style={{ padding: "4px 10px" }}>
+        <Button
+          variant="ghost"
+          onClick={submit}
+          disabled={atCapacity}
+          style={{ padding: "4px 10px" }}
+        >
           +
         </Button>
       </div>
       <Button
         variant="ghost"
         onClick={onPickFromMap}
+        disabled={atCapacity}
         style={{ marginTop: 4, fontSize: 12, padding: "4px 8px", width: "100%" }}
       >
         📍 Pick on map

@@ -15,6 +15,7 @@ import {
   type JobStatus,
 } from "../services/jobsApi";
 import { VALIDATION_BUCKET, JOBS_EXECUTION_ROLE_ARN } from "../config/aws";
+import { MAX_ADDRESSES } from "../config/limits";
 
 export type PipelineStage =
   | "idle"
@@ -44,6 +45,11 @@ export function useBulkValidation() {
   const run = useCallback(async (addresses: AddressInput[]) => {
     if (addresses.length === 0) {
       setError("Add at least one address.");
+      return;
+    }
+    // Hard cap at the call site (defense in depth behind the UI caps).
+    if (addresses.length > MAX_ADDRESSES) {
+      setError(`This demo is limited to ${MAX_ADDRESSES} addresses per run.`);
       return;
     }
     setError(null);
