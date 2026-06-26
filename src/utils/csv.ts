@@ -31,16 +31,18 @@ export function parseAddresses(raw: string): AddressInput[] {
       locality: pick(row, ["city", "locality", "town"]),
       region: pick(row, ["state", "region", "province"]),
       postalCode: pick(row, ["zip", "zipcode", "postal", "postalcode"]),
-      country: pick(row, ["country"]) || "US",
+      // Leave country blank when not given — Autocomplete detects the real one.
+      // Defaulting to "US" here would mislabel non-US addresses.
+      country: pick(row, ["country"]) || undefined,
     }));
   }
 
-  // Plain text fallback: one address per line.
+  // Plain text fallback: one address per line. Country left for Autocomplete.
   return trimmed
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
-    .map((line1, i) => ({ id: String(i), line1, country: "US" }));
+    .map((line1, i) => ({ id: String(i), line1 }));
 }
 
 function pick(row: Record<string, string>, keys: string[]): string {

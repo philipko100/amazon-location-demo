@@ -79,7 +79,12 @@ export async function enrichAddress(addr: AddressInput): Promise<EnrichedAddress
     locality: fill(addr.locality, top.Locality),
     region: fill(addr.region, top.Region?.Code ?? top.Region?.Name),
     postalCode: fill(addr.postalCode, top.PostalCode),
-    country: fill(addr.country, top.Country?.Code3 ?? top.Country?.Code2),
+    // Country: trust Autocomplete's DETECTED country over the input. The input
+    // is often a default (the CSV parser fills blank countries with "US"), so
+    // letting it win would mislabel e.g. a Vancouver address as USA even though
+    // Autocomplete resolved it to Canada. Fall back to the input only when
+    // Autocomplete returned no country.
+    country: top.Country?.Code3 ?? top.Country?.Code2 ?? addr.country,
   };
 
   return {
