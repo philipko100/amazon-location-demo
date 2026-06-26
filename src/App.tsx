@@ -22,7 +22,7 @@ export function App() {
       <header style={headerStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/favicon.svg" width={24} height={24} alt="" />
-          <strong>Amazon Location Service Demo</strong>
+          <strong>Philip Ko's Geospatial Technologies Demo</strong>
         </div>
         <nav style={navStyle}>
           {TABS.map((t) => (
