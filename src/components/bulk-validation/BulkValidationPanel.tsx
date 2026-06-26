@@ -19,7 +19,7 @@ const MATCH_COLOR = "#16a34a";
 
 export function BulkValidationPanel() {
   const [raw, setRaw] = useState("");
-  const { stage, jobStatus, results, error, run } = useBulkValidation();
+  const { stage, jobStatus, lastUpdated, results, error, run } = useBulkValidation();
   const { setMarkersFor, setTab } = useAppState();
 
   const addresses = parseAddresses(raw);
@@ -74,7 +74,7 @@ export function BulkValidationPanel() {
         )}
       </div>
 
-      <ValidationProgress stage={stage} jobStatus={jobStatus} />
+      <ValidationProgress stage={stage} jobStatus={jobStatus} lastUpdated={lastUpdated} />
       <ErrorBanner message={error} />
 
       {results && <ResultsTable results={results} />}

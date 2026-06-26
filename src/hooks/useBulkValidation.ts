@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 import type { AddressInput, ValidationResult } from "../types";
 import { addressesToParquet, parseResults } from "../utils/parquet";
 import { uploadParquet, listKeys, downloadBytes } from "../services/s3Client";
+import { enrichAddress } from "../services/placesClient";
 import {
   startValidateAddressJob,
   pollUntilDone,
@@ -19,6 +20,7 @@ import { MAX_ADDRESSES } from "../config/limits";
 
 export type PipelineStage =
   | "idle"
+  | "enriching"
   | "encoding"
   | "uploading"
   | "starting"
@@ -39,6 +41,7 @@ function newJobKey(): string {
 export function useBulkValidation() {
   const [stage, setStage] = useState<PipelineStage>("idle");
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [results, setResults] = useState<ValidationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +58,7 @@ export function useBulkValidation() {
     setError(null);
     setResults(null);
     setJobStatus(null);
+    setLastUpdated(null);
     const key = newJobKey();
     // The Jobs API treats InputOptions.Location as a DIRECTORY/prefix and scans
     // it for Parquet files — not a single file path. So we put the file inside a
@@ -64,8 +68,23 @@ export function useBulkValidation() {
     const outputPrefix = `output/${key}/`;
 
     try {
+      // Complete each address row-by-row via Autocomplete so the structured
+      // components the Jobs schema requires (locality, region, postal code) are
+      // populated. Sequential to keep request rate gentle for the demo.
+      setStage("enriching");
+      const enriched: AddressInput[] = [];
+      for (const addr of addresses) {
+        try {
+          enriched.push(await enrichAddress(addr));
+        } catch {
+          // If enrichment fails for one row, keep the original; the job may
+          // still reject it, but one bad lookup shouldn't sink the batch.
+          enriched.push(addr);
+        }
+      }
+
       setStage("encoding");
-      const parquet = await addressesToParquet(addresses);
+      const parquet = await addressesToParquet(enriched);
 
       setStage("uploading");
       await uploadParquet(inputKey, parquet);
@@ -81,7 +100,10 @@ export function useBulkValidation() {
       if (!started.JobId) throw new Error("StartJob did not return a JobId.");
 
       setStage("polling");
-      const job = await pollUntilDone(started.JobId, setJobStatus);
+      const job = await pollUntilDone(started.JobId, (status) => {
+        setJobStatus(status);
+        setLastUpdated(Date.now());
+      });
       if (job.Status !== "Completed") {
         throw new Error(
           `Job ${job.Status}` +
@@ -111,5 +133,5 @@ export function useBulkValidation() {
     }
   }, []);
 
-  return { stage, jobStatus, results, error, run };
+  return { stage, jobStatus, lastUpdated, results, error, run };
 }
