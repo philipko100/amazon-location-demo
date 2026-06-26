@@ -59,7 +59,7 @@ const dialogStyle: React.CSSProperties = {
   background: "white",
   borderRadius: 12,
   padding: "28px 28px 24px",
-  maxWidth: 520,
+  maxWidth: 640,
   width: "100%",
   boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
   fontFamily: "system-ui, sans-serif",
