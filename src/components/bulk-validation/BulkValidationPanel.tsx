@@ -104,7 +104,7 @@ export function BulkValidationPanel() {
                 {a.ready ? (
                   <span style={readyTag}>enriched</span>
                 ) : (
-                  <span style={skippedTag}>skipped — no locality</span>
+                  <span style={skippedTag}>sent as typed</span>
                 )}
               </li>
             ))}

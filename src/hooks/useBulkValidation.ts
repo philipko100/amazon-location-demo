@@ -70,34 +70,24 @@ export function useBulkValidation() {
     const outputPrefix = `output/${key}/`;
 
     try {
-      // Complete each address row-by-row via Autocomplete so the structured
-      // components the Jobs schema requires (locality, region, postal code) are
-      // populated. Sequential to keep request rate gentle for the demo.
+      // Complete each address row-by-row via Autocomplete so we submit the full
+      // standardized single-line address. Sequential to keep the request rate
+      // gentle for the demo. `ready` flags whether enrichment resolved it; we
+      // still submit every row (as free-form AddressLines_1, which the schema
+      // accepts on its own), so a weak lookup no longer drops the row.
       setStage("enriching");
       const enriched: EnrichedAddress[] = [];
       for (const addr of addresses) {
         try {
           enriched.push(await enrichAddress(addr));
         } catch {
-          // A failed lookup just marks the row not-ready; it gets dropped below
-          // rather than failing the whole job with an empty locality cell.
           enriched.push({ ...addr, ready: false });
         }
       }
       setEnrichedAddresses(enriched);
 
-      // Parquet is columnar: a single empty AddressComponents_Locality fails the
-      // entire job. Only send rows that came back with the required component.
-      const ready = enriched.filter((a) => a.ready);
-      if (ready.length === 0) {
-        throw new Error(
-          "Autocomplete couldn't resolve a city/locality for any address. " +
-            "Try adding more detail (e.g. city and state).",
-        );
-      }
-
       setStage("encoding");
-      const parquet = await addressesToParquet(ready);
+      const parquet = await addressesToParquet(enriched);
 
       setStage("uploading");
       await uploadParquet(inputKey, parquet);

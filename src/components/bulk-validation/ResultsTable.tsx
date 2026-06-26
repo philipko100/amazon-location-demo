@@ -22,6 +22,7 @@ export function ResultsTable({ results }: { results: ValidationResult[] }) {
             <th style={th}>Granularity</th>
             <th style={th}>Confidence</th>
             <th style={th}>Score</th>
+            <th style={th}>Mailable</th>
             <th style={th}>Coordinates (lng, lat)</th>
           </tr>
         </thead>
@@ -37,6 +38,9 @@ export function ResultsTable({ results }: { results: ValidationResult[] }) {
               <td style={td}>{r.confidence ?? "—"}</td>
               <td style={td}>
                 {r.confidenceScore != null ? r.confidenceScore.toFixed(2) : "—"}
+              </td>
+              <td style={td}>
+                {r.mailable === undefined ? "—" : r.mailable ? "✓ Yes" : "✗ No"}
               </td>
               <td style={td}>
                 {r.position ? formatLngLat(r.position, 5) : "—"}

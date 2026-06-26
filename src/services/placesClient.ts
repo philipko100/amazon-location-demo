@@ -60,6 +60,8 @@ export async function enrichAddress(addr: AddressInput): Promise<EnrichedAddress
     new AutocompleteCommand({
       QueryText: query,
       MaxResults: 1,
+      // "Core" returns the full structured address components for each result.
+      AdditionalFeatures: ["Core"],
       // Constrain to countries the Jobs ValidateAddress action supports.
       Filter: { IncludeCountries: ["USA", "CAN", "GBR", "AUS"] },
     }),

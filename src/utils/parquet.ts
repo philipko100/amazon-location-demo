@@ -31,28 +31,29 @@ async function loadWasm(): Promise<ParquetWasm> {
   return wasmPromise;
 }
 
-/** Encode addresses to Parquet bytes using the documented input column schema. */
+/**
+ * Encode addresses to Parquet for a ValidateAddress job.
+ *
+ * Per the input schema, a single-line address goes entirely in AddressLines_1,
+ * and the docs warn AGAINST mixing a full address with AddressComponents_*. So
+ * we submit the complete (enriched) address as free-form AddressLines_1 and omit
+ * the structured component columns — which also sidesteps the columnar
+ * "AddressComponents_Locality must have length at least 1" failure entirely.
+ */
 export async function addressesToParquet(addresses: AddressInput[]): Promise<Uint8Array> {
   const wasm = await loadWasm();
 
-  // The Jobs input is columnar and each AddressComponents_* column it scans must
-  // be non-empty for EVERY row ("must have length at least 1"). So a column is
-  // only included when all rows have a value for it — otherwise a single blank
-  // cell would fail the whole job. Callers pre-filter rows lacking a locality.
-  const columns: Record<string, string[]> = {
-    Id: addresses.map((a) => a.id),
-    AddressLines_1: addresses.map((a) => a.line1),
-    AddressComponents_Locality: addresses.map((a) => a.locality ?? ""),
-  };
-  const addIfComplete = (name: string, pick: (a: AddressInput) => string | undefined) => {
-    const vals = addresses.map((a) => pick(a)?.trim() ?? "");
-    if (vals.every((v) => v.length > 0)) columns[name] = vals;
-  };
-  addIfComplete("AddressComponents_Region", (a) => a.region);
-  addIfComplete("AddressComponents_PostalCode", (a) => a.postalCode);
-  addIfComplete("AddressComponents_Country", (a) => a.country);
+  const fullLine = (a: AddressInput) =>
+    a.line1?.trim() ||
+    [a.line1, a.locality, a.region, a.postalCode, a.country]
+      .map((s) => s?.trim())
+      .filter(Boolean)
+      .join(", ");
 
-  const table = tableFromArrays(columns);
+  const table = tableFromArrays({
+    Id: addresses.map((a) => a.id),
+    AddressLines_1: addresses.map(fullLine),
+  });
 
   // apache-arrow -> Arrow IPC stream -> parquet-wasm Table -> Parquet bytes.
   const ipc = tableToIPC(table, "stream");
@@ -76,6 +77,11 @@ export async function parseResults(parquetBytes: Uint8Array): Promise<Validation
     v == null ? undefined : String(v);
   const num = (v: unknown): number | undefined =>
     v == null ? undefined : Number(v);
+  const bool = (v: unknown): boolean | undefined => {
+    if (v == null) return undefined;
+    if (typeof v === "boolean") return v;
+    return String(v).toLowerCase() === "true";
+  };
 
   const results: ValidationResult[] = [];
   for (let i = 0; i < table.numRows; i++) {
@@ -93,6 +99,7 @@ export async function parseResults(parquetBytes: Uint8Array): Promise<Validation
         get(i, "Output_ValidationResults_MatchConfidence"),
       ) as MatchConfidence | undefined,
       confidenceScore: num(get(i, "Output_ValidationResults_MatchConfidenceScore")),
+      mailable: bool(get(i, "Output_AddressMetadata_DeliveryIndicators_Mailable")),
       position: lng != null && lat != null ? [lng, lat] : undefined,
     });
   }

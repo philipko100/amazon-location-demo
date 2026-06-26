@@ -50,5 +50,6 @@ export interface ValidationResult {
   granularity?: string; // Premise | Street | LocalityAndPostalCode | Locality
   confidence?: MatchConfidence;
   confidenceScore?: number; // 0..1
+  mailable?: boolean; // Output_AddressMetadata_DeliveryIndicators_Mailable
   position?: LngLat; // present when the result carries coordinates
 }
