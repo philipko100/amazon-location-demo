@@ -6,9 +6,10 @@
  * progress percentage from the Jobs API, so we surface the status string only.
  */
 import { useCallback, useState } from "react";
-import type { AddressInput, ValidationResult } from "../types";
+import type { AddressInput, EnrichedAddress, ValidationResult } from "../types";
 import { addressesToParquet, parseResults } from "../utils/parquet";
 import { uploadParquet, listKeys, downloadBytes } from "../services/s3Client";
+import { enrichAddress } from "../services/placesClient";
 import {
   startValidateAddressJob,
   pollUntilDone,
@@ -19,6 +20,7 @@ import { MAX_ADDRESSES } from "../config/limits";
 
 export type PipelineStage =
   | "idle"
+  | "enriching"
   | "encoding"
   | "uploading"
   | "starting"
@@ -39,6 +41,8 @@ function newJobKey(): string {
 export function useBulkValidation() {
   const [stage, setStage] = useState<PipelineStage>("idle");
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [enrichedAddresses, setEnrichedAddresses] = useState<EnrichedAddress[] | null>(null);
   const [results, setResults] = useState<ValidationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,16 +59,39 @@ export function useBulkValidation() {
     setError(null);
     setResults(null);
     setJobStatus(null);
+    setLastUpdated(null);
+    setEnrichedAddresses(null);
     const key = newJobKey();
-    const inputKey = `input/${key}.parquet`;
+    // The Jobs API treats InputOptions.Location as a DIRECTORY/prefix and scans
+    // it for Parquet files — not a single file path. So we put the file inside a
+    // per-job folder and pass the folder URI as the input location.
+    const inputPrefix = `input/${key}/`;
+    const inputKey = `${inputPrefix}data.parquet`;
     const outputPrefix = `output/${key}/`;
 
     try {
+      // Complete each address row-by-row via Autocomplete so we submit the full
+      // standardized single-line address. Sequential to keep the request rate
+      // gentle for the demo. `ready` flags whether enrichment resolved it; we
+      // still submit every row (as free-form AddressLines_1, which the schema
+      // accepts on its own), so a weak lookup no longer drops the row.
+      setStage("enriching");
+      const enriched: EnrichedAddress[] = [];
+      for (const addr of addresses) {
+        try {
+          enriched.push(await enrichAddress(addr));
+        } catch {
+          enriched.push({ ...addr, ready: false });
+        }
+      }
+      setEnrichedAddresses(enriched);
+
       setStage("encoding");
-      const parquet = await addressesToParquet(addresses);
+      const parquet = await addressesToParquet(enriched);
 
       setStage("uploading");
-      const inputUri = await uploadParquet(inputKey, parquet);
+      await uploadParquet(inputKey, parquet);
+      const inputUri = `s3://${VALIDATION_BUCKET}/${inputPrefix}`;
       const outputUri = `s3://${VALIDATION_BUCKET}/${outputPrefix}`;
 
       setStage("starting");
@@ -76,7 +103,10 @@ export function useBulkValidation() {
       if (!started.JobId) throw new Error("StartJob did not return a JobId.");
 
       setStage("polling");
-      const job = await pollUntilDone(started.JobId, setJobStatus);
+      const job = await pollUntilDone(started.JobId, (status) => {
+        setJobStatus(status);
+        setLastUpdated(Date.now());
+      });
       if (job.Status !== "Completed") {
         throw new Error(
           `Job ${job.Status}` +
@@ -85,15 +115,20 @@ export function useBulkValidation() {
       }
 
       setStage("downloading");
-      // The service writes one or more files under the output prefix. Pick the
-      // first .parquet object it produced.
+      // The service writes output as one or more Parquet files (possibly nested)
+      // under the output prefix, alongside non-data markers like _SUCCESS. Take
+      // every .parquet object and parse/concatenate them.
       const keys = await listKeys(outputPrefix);
-      const resultKey = keys.find((k) => k.endsWith(".parquet")) ?? keys[0];
-      if (!resultKey) throw new Error("Job completed but produced no output files.");
-      const bytes = await downloadBytes(resultKey);
+      const parquetKeys = keys.filter((k) => k.toLowerCase().endsWith(".parquet"));
+      if (parquetKeys.length === 0) {
+        throw new Error("Job completed but produced no Parquet output files.");
+      }
 
       setStage("parsing");
-      setResults(await parseResults(bytes));
+      const perFile = await Promise.all(
+        parquetKeys.map(async (k) => parseResults(await downloadBytes(k))),
+      );
+      setResults(perFile.flat());
       setStage("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -101,5 +136,5 @@ export function useBulkValidation() {
     }
   }, []);
 
-  return { stage, jobStatus, results, error, run };
+  return { stage, jobStatus, lastUpdated, enrichedAddresses, results, error, run };
 }

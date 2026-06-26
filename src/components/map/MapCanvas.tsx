@@ -20,15 +20,19 @@ const LINE_SOURCE_ID = "route-lines";
 const LINE_LAYER_ID = "route-lines-layer";
 const LINE_ERROR_LAYER_ID = "route-lines-error-layer";
 
+// Default to the dark OpenData style when a dark map resource is configured,
+// otherwise fall back to the light one.
+const DEFAULT_MAP = MAP_NAME_DARK || MAP_NAME;
+
 export function MapCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
   const markerObjs = useRef<MlMarker[]>([]);
   const lineLabelObjs = useRef<MlMarker[]>([]);
-  const appliedMap = useRef(MAP_NAME); // the style currently applied to the map
+  const appliedMap = useRef(DEFAULT_MAP); // the style currently applied to the map
   const [ready, setReady] = useState(false);
   const [styleEpoch, setStyleEpoch] = useState(0); // bumps when a new style finishes loading
-  const [activeMap, setActiveMap] = useState(MAP_NAME);
+  const [activeMap, setActiveMap] = useState(DEFAULT_MAP);
   const { markers, routeLines, pick, requestPick } = useAppState();
 
   // Initialize the map once.

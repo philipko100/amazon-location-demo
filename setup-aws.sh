@@ -201,6 +201,8 @@ UNAUTH_POLICY=$(cat <<JSON
       "Resource": ["${MAP_ARN}","${MAP_ARN_DARK}"] },
     { "Sid": "V2RouteMatrix", "Effect": "Allow",
       "Action": "geo-routes:CalculateRouteMatrix", "Resource": "*" },
+    { "Sid": "V2Places", "Effect": "Allow",
+      "Action": "geo-places:Autocomplete", "Resource": "*" },
     { "Sid": "Jobs", "Effect": "Allow",
       "Action": ["geo:StartJob","geo:GetJob","geo:ListJobs"], "Resource": "*" },
     { "Sid": "PassJobsRole", "Effect": "Allow",

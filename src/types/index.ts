@@ -32,6 +32,14 @@ export interface AddressInput {
   country?: string; // ISO; Jobs supports US, CA, GB/UK, AU
 }
 
+/** An AddressInput after the Autocomplete enrichment pass. */
+export interface EnrichedAddress extends AddressInput {
+  /** The full standardized label Autocomplete returned (for display). */
+  enrichedLabel?: string;
+  /** True if enrichment produced the components the Jobs schema requires. */
+  ready: boolean;
+}
+
 export type MatchConfidence = "High" | "MediumHigh" | "Medium" | "MediumLow" | "Low";
 
 /** One row of address-validation output, parsed from the result Parquet. */
@@ -42,5 +50,6 @@ export interface ValidationResult {
   granularity?: string; // Premise | Street | LocalityAndPostalCode | Locality
   confidence?: MatchConfidence;
   confidenceScore?: number; // 0..1
+  mailable?: boolean; // Output_AddressMetadata_DeliveryIndicators_Mailable
   position?: LngLat; // present when the result carries coordinates
 }
