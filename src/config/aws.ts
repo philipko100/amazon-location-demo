@@ -25,6 +25,17 @@ export const COGNITO_IDENTITY_POOL_ID = required(
   "VITE_COGNITO_IDENTITY_POOL_ID",
 );
 
+/**
+ * ARN of the Cognito unauthenticated IAM role. We assume it directly via the
+ * STS classic flow (see services/auth.ts) instead of Cognito's enhanced flow,
+ * because the enhanced flow attaches a scoped-down session policy that omits
+ * iam:PassRole — which the Jobs StartJob call requires.
+ */
+export const COGNITO_UNAUTH_ROLE_ARN = required(
+  import.meta.env.VITE_COGNITO_UNAUTH_ROLE_ARN,
+  "VITE_COGNITO_UNAUTH_ROLE_ARN",
+);
+
 export const MAP_NAME = required(import.meta.env.VITE_MAP_NAME, "VITE_MAP_NAME");
 
 /** Optional second (dark) Map resource. Empty string => no dark switcher. */
