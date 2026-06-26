@@ -4,7 +4,14 @@
  *  - the markers each feature wants drawn on the map
  *  - a "pick mode" so a panel can ask the user to click the map for a coordinate
  */
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { LngLat } from "../types";
 
 export type FeatureTab = "map" | "matrix" | "validation";
@@ -31,16 +38,29 @@ interface AppStateValue {
 const Ctx = createContext<AppStateValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [tab, setTab] = useState<FeatureTab>("map");
+  const [tab, setTabState] = useState<FeatureTab>("map");
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [pickHandler, setPickHandler] = useState<PickHandler>(null);
 
-  // requestPick stores a function; wrap so setState doesn't treat it as an updater.
-  const requestPick = (handler: PickHandler) => setPickHandler(() => handler);
+  // requestPick stores a function; wrap so setState doesn't treat it as an
+  // updater. useCallback keeps its identity stable so consumers' effects that
+  // depend on it (e.g. MapCanvas click/keydown listeners) don't churn.
+  const requestPick = useCallback(
+    (handler: PickHandler) => setPickHandler(() => handler),
+    [],
+  );
+
+  // Switching tabs must cancel any in-progress map pick: otherwise the pick
+  // callback would target a panel that just unmounted, silently dropping the
+  // point and leaving the new tab's panel slid off-screen.
+  const setTab = useCallback((t: FeatureTab) => {
+    setPickHandler(null);
+    setTabState(t);
+  }, []);
 
   const value = useMemo<AppStateValue>(
     () => ({ tab, setTab, markers, setMarkers, pickHandler, requestPick }),
-    [tab, markers, pickHandler],
+    [tab, setTab, markers, pickHandler, requestPick],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

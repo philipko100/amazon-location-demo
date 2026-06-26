@@ -5,7 +5,7 @@
  * picked from the map), choose a travel mode, and compute the distance/time
  * matrix. Results render in a grid (rows = origins, cols = destinations).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LngLat, NamedPoint, TravelMode } from "../../types";
 import { useRouteMatrix } from "../../hooks/useRouteMatrix";
 import { MAX_ORIGINS, MAX_DESTINATIONS } from "../../config/limits";
@@ -25,50 +25,46 @@ export function RouteMatrixPanel() {
   const [mode, setMode] = useState<TravelMode>("Car");
   const [unit, setUnit] = useState<"km" | "mi">("km");
   const { result, loading, error, run } = useRouteMatrix();
-  const { setMarkers, requestPick, setTab } = useAppState();
+  const { setMarkers, requestPick } = useAppState();
 
-  function syncMarkers(os: NamedPoint[], ds: NamedPoint[]) {
+  // Keep the map's markers derived from the current points. Doing this in an
+  // effect (rather than inside each mutation) means it always reflects the
+  // latest state — no stale-closure risk from imperative sync calls.
+  useEffect(() => {
     const markers: MapMarker[] = [
-      ...os.map((o) => ({ id: `o-${o.id}`, position: o.position, color: ORIGIN_COLOR, label: o.label })),
-      ...ds.map((d) => ({ id: `d-${d.id}`, position: d.position, color: DEST_COLOR, label: d.label })),
+      ...origins.map((o) => ({ id: `o-${o.id}`, position: o.position, color: ORIGIN_COLOR, label: o.label })),
+      ...destinations.map((d) => ({ id: `d-${d.id}`, position: d.position, color: DEST_COLOR, label: d.label })),
     ];
     setMarkers(markers);
-  }
+  }, [origins, destinations, setMarkers]);
 
   function addPoint(kind: "origin" | "dest", position: LngLat, label?: string) {
-    // Enforce the demo cap; ignore adds beyond the limit.
-    if (kind === "origin" && origins.length >= MAX_ORIGINS) return;
-    if (kind === "dest" && destinations.length >= MAX_DESTINATIONS) return;
     const point: NamedPoint = {
       id: crypto.randomUUID(),
       label: label ?? `${position[1].toFixed(4)}, ${position[0].toFixed(4)}`,
       position,
     };
+    // Functional updates + cap enforcement, so adds from the async map-pick
+    // callback always see the latest list (no stale closure).
     if (kind === "origin") {
-      const next = [...origins, point];
-      setOrigins(next);
-      syncMarkers(next, destinations);
+      setOrigins((prev) => (prev.length >= MAX_ORIGINS ? prev : [...prev, point]));
     } else {
-      const next = [...destinations, point];
-      setDestinations(next);
-      syncMarkers(origins, next);
+      setDestinations((prev) => (prev.length >= MAX_DESTINATIONS ? prev : [...prev, point]));
     }
   }
 
   function removePoint(kind: "origin" | "dest", id: string) {
     if (kind === "origin") {
-      const next = origins.filter((p) => p.id !== id);
-      setOrigins(next);
-      syncMarkers(next, destinations);
+      setOrigins((prev) => prev.filter((p) => p.id !== id));
     } else {
-      const next = destinations.filter((p) => p.id !== id);
-      setDestinations(next);
-      syncMarkers(origins, next);
+      setDestinations((prev) => prev.filter((p) => p.id !== id));
     }
   }
 
+  // The map is always mounted behind this panel, so its visible area is already
+  // clickable — we just register the pick handler (no tab switch needed). The
+  // MapCanvas shows a "Click the map to pick a location" banner while active.
   function pickFromMap(kind: "origin" | "dest") {
-    setTab("map");
     requestPick((pos) => addPoint(kind, pos));
   }
 

@@ -77,6 +77,16 @@ export function MapCanvas() {
     };
   }, [pickHandler, requestPick]);
 
+  // Let the user cancel pick mode with Escape (brings the panel back).
+  useEffect(() => {
+    if (!pickHandler) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") requestPick(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pickHandler, requestPick]);
+
   // Reflect shared markers onto the map.
   useEffect(() => {
     const map = mapRef.current;
@@ -109,7 +119,9 @@ export function MapCanvas() {
           onChange={setActiveMap}
         />
       )}
-      {pickHandler && <div style={pickBannerStyle}>Click the map to pick a location…</div>}
+      {pickHandler && (
+        <div style={pickBannerStyle}>Click the map to pick a location · Esc to cancel</div>
+      )}
     </div>
   );
 }
