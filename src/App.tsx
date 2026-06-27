@@ -120,6 +120,10 @@ const rootStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   height: "100vh",
+  // Clip horizontally so panels parked off-screen (translateX(100%)) can't be
+  // scrolled into view on mobile — otherwise the page scrolls sideways onto the
+  // hidden Bulk Validation panel, making it look like it opened on entry.
+  overflowX: "hidden",
   fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
 };
 const headerStyle: React.CSSProperties = {
@@ -155,14 +159,15 @@ const titleStyleMobile: React.CSSProperties = {
   whiteSpace: "normal",
 };
 const navStyle: React.CSSProperties = { display: "flex", gap: 12, alignItems: "center" };
-// Mobile nav: horizontally scrollable row so tabs+badges never crush together.
+// Mobile nav: wrap to multiple lines rather than scroll. A scroll container
+// (overflow:auto) would clip the info badge's dropdown prompt/tooltip that hang
+// below the row; wrapping keeps everything visible and avoids horizontal scroll.
 const navStyleMobile: React.CSSProperties = {
   display: "flex",
-  gap: 12,
+  gap: 10,
+  rowGap: 8,
   alignItems: "center",
-  overflowX: "auto",
-  paddingBottom: 2,
-  WebkitOverflowScrolling: "touch",
+  flexWrap: "wrap",
 };
 const tabGroupStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 4 };
 const tabStyle = (active: boolean): React.CSSProperties => ({

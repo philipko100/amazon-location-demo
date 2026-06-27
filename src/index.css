@@ -14,6 +14,8 @@ body,
 #root {
   margin: 0;
   height: 100%;
+  /* Prevent sideways scroll onto off-screen (translateX) panels on mobile. */
+  overflow-x: hidden;
 }
 
 body {
