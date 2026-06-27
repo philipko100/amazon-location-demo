@@ -1,6 +1,8 @@
 :root {
   --aws-navy: #232f3e;
   --accent-blue: #1d4ed8;
+  --mono-font: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono",
+    Menlo, Consolas, monospace;
 }
 
 * {
@@ -20,7 +22,7 @@ body {
 }
 
 button {
-  font-family: inherit;
+  font-family: var(--mono-font);
 }
 
 /* Subtle interactive lift on all buttons for a bit more pop. */

@@ -52,7 +52,7 @@ export function App() {
       <header style={headerStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/favicon.svg" width={24} height={24} alt="" />
-          <strong>Philip Ko's Career Technologies Demo</strong>
+          <strong style={titleStyle}>Philip Ko's Career Technologies Demo</strong>
         </div>
         <nav style={navStyle}>
           {TABS.map((t) => (
@@ -111,6 +111,11 @@ const headerStyle: React.CSSProperties = {
   color: "white",
   flexShrink: 0,
   boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+};
+const titleStyle: React.CSSProperties = {
+  fontFamily:
+    '"JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+  letterSpacing: "-0.02em",
 };
 const navStyle: React.CSSProperties = { display: "flex", gap: 12, alignItems: "center" };
 const tabGroupStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 4 };
