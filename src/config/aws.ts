@@ -10,12 +10,17 @@
  */
 
 function required(value: string | undefined, name: string): string {
-  if (!value) {
+  // Trim: env values pasted into a host's console (e.g. Amplify) often pick up a
+  // stray leading/trailing space, which would silently corrupt a bucket name or
+  // ARN (a trailing space on the bucket sent S3 PutObject to "<bucket> ",
+  // surfacing as a confusing CORS error since S3 errors carry no CORS headers).
+  const trimmed = value?.trim();
+  if (!trimmed) {
     throw new Error(
       `Missing required env var ${name}. Copy .env.example to .env.local and fill it in.`,
     );
   }
-  return value;
+  return trimmed;
 }
 
 export const AWS_REGION = required(import.meta.env.VITE_AWS_REGION, "VITE_AWS_REGION");
@@ -48,11 +53,12 @@ export interface MapStyle {
   mapName: string;
 }
 
+const mapEnv = (v: string | undefined) => (v ?? "").trim();
 const ALL_MAP_STYLES: MapStyle[] = [
-  { key: "standard-light", label: "Standard Light", mapName: import.meta.env.VITE_MAP_NAME ?? "" },
-  { key: "standard-dark", label: "Standard Dark", mapName: import.meta.env.VITE_MAP_NAME_DARK ?? "" },
-  { key: "viz-light", label: "Visualization Light", mapName: import.meta.env.VITE_MAP_NAME_VIZ_LIGHT ?? "" },
-  { key: "viz-dark", label: "Visualization Dark", mapName: import.meta.env.VITE_MAP_NAME_VIZ_DARK ?? "" },
+  { key: "standard-light", label: "Standard Light", mapName: mapEnv(import.meta.env.VITE_MAP_NAME) },
+  { key: "standard-dark", label: "Standard Dark", mapName: mapEnv(import.meta.env.VITE_MAP_NAME_DARK) },
+  { key: "viz-light", label: "Visualization Light", mapName: mapEnv(import.meta.env.VITE_MAP_NAME_VIZ_LIGHT) },
+  { key: "viz-dark", label: "Visualization Dark", mapName: mapEnv(import.meta.env.VITE_MAP_NAME_VIZ_DARK) },
 ];
 
 export const MAP_STYLES: MapStyle[] = ALL_MAP_STYLES.filter((s) => s.mapName.trim() !== "");
