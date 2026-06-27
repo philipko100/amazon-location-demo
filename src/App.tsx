@@ -16,7 +16,7 @@ const TABS: { id: FeatureTab; label: string; info: string }[] = [
     id: "map",
     label: "Map",
     info:
-      "I worked on our Map's service migration from a geospatial data ingestion cluster and distributed MVT tile replication architecture to a single, modular PMTiles-driven architecture for our OpenData GetMapTile technology in Amazon Location Service. Impact: saved $ millions in annual cost and 40+ hours in tile generation workflow runs.",
+      "I worked on our Map's service migration from a geospatial data ingestion cluster and distributed 1+ billion MVT tile replication architecture to a single, modular PMTiles-driven architecture for our OpenData GetMapTile technology in Amazon Location Service. Impact: saved $ millions in annual cost and 40+ hours in tile generation workflow runs.",
   },
   {
     id: "matrix",
@@ -28,7 +28,7 @@ const TABS: { id: FeatureTab; label: string; info: string }[] = [
     id: "validation",
     label: "Bulk Validation",
     info:
-      "I built our Jobs APIs and asynchronous distributed orchestration and workflow system that enables customers to verify, standardize, and enrich hundreds of millions of their address records in under 24 hours using Amazon Location Service. Impact: $ millions in annual revenue.",
+      "I built our Jobs APIs and asynchronous distributed orchestration and workflow system that enables customers to verify, standardize, and enrich 100+ millions of their address records in under 24 hours using Amazon Location Service. Impact: $ millions in annual revenue.",
   },
 ];
 
