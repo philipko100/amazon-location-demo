@@ -108,7 +108,8 @@ aws s3api put-bucket-cors --bucket "$BUCKET" --cors-configuration '{
     "AllowedOrigins": ["*"],
     "AllowedMethods": ["GET", "PUT"],
     "AllowedHeaders": ["*"],
-    "ExposeHeaders": ["ETag"]
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
   }]
 }'
 # CORS allows any origin: it is not the access control (SigV4 + the Cognito IAM
