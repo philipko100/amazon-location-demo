@@ -33,8 +33,9 @@ export function MapCanvas() {
   const appliedKey = useRef(DEFAULT_MAP_STYLE_KEY); // style key currently applied
   const [ready, setReady] = useState(false);
   const [styleEpoch, setStyleEpoch] = useState(0); // bumps when a new style finishes loading
-  const [activeKey, setActiveKey] = useState(DEFAULT_MAP_STYLE_KEY);
-  const { markers, routeLines, pick, requestPick } = useAppState();
+  // Active style key lives in shared state so the feature panels can theme to it.
+  const { markers, routeLines, pick, requestPick, mapStyleKey: activeKey, setMapStyleKey: setActiveKey } =
+    useAppState();
 
   // Initialize the map once.
   useEffect(() => {

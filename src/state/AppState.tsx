@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import type { LngLat } from "../types";
+import { DEFAULT_MAP_STYLE_KEY } from "../config/aws";
 
 export type FeatureTab = "map" | "matrix" | "validation";
 
@@ -58,6 +59,12 @@ interface AppStateValue {
   setRouteLines: (l: RouteLine[]) => void;
   pick: PickRequest | null;
   requestPick: (req: PickRequest | null) => void;
+  /** The active map style key (e.g. "standard-dark"); owned here so the feature
+   *  panels can theme themselves to match the basemap. */
+  mapStyleKey: string;
+  setMapStyleKey: (key: string) => void;
+  /** True when the active map style is a dark one. */
+  isDark: boolean;
 }
 
 const Ctx = createContext<AppStateValue | null>(null);
@@ -72,6 +79,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   });
   const [routeLines, setRouteLines] = useState<RouteLine[]>([]);
   const [pick, setPick] = useState<PickRequest | null>(null);
+  const [mapStyleKey, setMapStyleKey] = useState<string>(DEFAULT_MAP_STYLE_KEY);
+  const isDark = mapStyleKey.includes("dark");
 
   const setMarkersFor = useCallback((source: MarkerSource, next: MapMarker[]) => {
     setMarkersBySource((prev) => ({ ...prev, [source]: next }));
@@ -93,8 +102,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AppStateValue>(
-    () => ({ tab, setTab, markers, setMarkersFor, routeLines, setRouteLines, pick, requestPick }),
-    [tab, setTab, markers, setMarkersFor, routeLines, setRouteLines, pick, requestPick],
+    () => ({
+      tab,
+      setTab,
+      markers,
+      setMarkersFor,
+      routeLines,
+      setRouteLines,
+      pick,
+      requestPick,
+      mapStyleKey,
+      setMapStyleKey,
+      isDark,
+    }),
+    [tab, setTab, markers, setMarkersFor, routeLines, setRouteLines, pick, requestPick, mapStyleKey, isDark],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

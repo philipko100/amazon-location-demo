@@ -33,8 +33,13 @@ const TABS: { id: FeatureTab; label: string; info: string }[] = [
 ];
 
 export function App() {
-  const { tab, setTab } = useAppState();
+  const { tab, setTab, isDark } = useAppState();
   const [showWelcome, setShowWelcome] = useState(true);
+  // When a dark basemap is active, theme the feature panels to match. The dark
+  // background is set inline (beats the panel's inline white); the .panel-dark
+  // class restyles the panels' inline-styled text/inputs/tables via index.css.
+  const panelTheme: React.CSSProperties = isDark ? { background: "#1b2430" } : {};
+  const panelClass = isDark ? "panel-dark" : undefined;
   // After the welcome modal closes, nudge the user to hover the info badges.
   // The hint stops once they hover any badge (handled in InfoBadge -> onSeen).
   const [hintBadges, setHintBadges] = useState(false);
@@ -83,10 +88,16 @@ export function App() {
 
         {/* Both panels stay mounted so their state (points, results, markers,
             lines) persists across tab switches; we just toggle visibility. */}
-        <aside style={{ ...panelWrapStyle, ...(tab === "matrix" ? null : panelHiddenStyle) }}>
+        <aside
+          className={panelClass}
+          style={{ ...panelWrapStyle, ...panelTheme, ...(tab === "matrix" ? null : panelHiddenStyle) }}
+        >
           <RouteMatrixPanel />
         </aside>
-        <aside style={{ ...panelWrapStyle, ...(tab === "validation" ? null : panelHiddenStyle) }}>
+        <aside
+          className={panelClass}
+          style={{ ...panelWrapStyle, ...panelTheme, ...(tab === "validation" ? null : panelHiddenStyle) }}
+        >
           <BulkValidationPanel />
         </aside>
       </main>

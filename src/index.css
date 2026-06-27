@@ -127,3 +127,42 @@ button:not(:disabled):active {
   font-family: system-ui, sans-serif;
   font-size: 12px;
 }
+
+/* ---- Dark theme for the feature panels (active when a dark basemap is on) ----
+   The panels use inline styles, so these overrides use !important to win.
+   Targets the common inline-styled elements: headings, body/hint text, inputs,
+   selects, table cells, and list rows. */
+.panel-dark {
+  color: #e5e7eb !important;
+}
+.panel-dark h2,
+.panel-dark h3 {
+  color: #f3f4f6 !important;
+}
+/* Hint/secondary paragraphs (muted gray inline) -> lighter gray on dark. */
+.panel-dark p {
+  color: #9ca3af !important;
+}
+.panel-dark input,
+.panel-dark select,
+.panel-dark textarea {
+  background: #243041 !important;
+  color: #e5e7eb !important;
+  border-color: #3a4862 !important;
+}
+.panel-dark input::placeholder,
+.panel-dark textarea::placeholder {
+  color: #8b97a8 !important;
+}
+/* Tables: header, cells, borders, and the address-uploader footer. */
+.panel-dark th {
+  background: #243041 !important;
+  color: #e5e7eb !important;
+  border-color: #3a4862 !important;
+}
+.panel-dark td {
+  border-color: #3a4862 !important;
+}
+.panel-dark li {
+  border-color: #3a4862 !important;
+}
