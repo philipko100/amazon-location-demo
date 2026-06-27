@@ -168,3 +168,16 @@ button:not(:disabled):active {
 .panel-dark li {
   border-color: #3a4862 !important;
 }
+/* Buttons in dark mode: ensure legible light text. The shared Button's "ghost"
+   variant uses dark (#232f3e) text on a transparent background — invisible on
+   the dark panel — so force a light color and lighter border for all buttons. */
+.panel-dark button {
+  color: #e5e7eb !important;
+  border-color: #3a4862 !important;
+}
+/* Keep the solid/gradient accent buttons (primary/secondary) readable too —
+   white text already, this just guarantees it under the rule above. */
+.panel-dark select,
+.panel-dark option {
+  color: #e5e7eb !important;
+}
