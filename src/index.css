@@ -52,6 +52,22 @@ button:not(:disabled):active {
   }
 }
 
+/* Attention pulse for the info badges after the welcome modal closes. */
+@keyframes als-info-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(124, 58, 237, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+  }
+}
+.als-info-pulse {
+  animation: als-info-pulse 1.4s ease-out infinite;
+}
+
 /* MapLibre popups inherit the app font */
 .maplibregl-popup-content {
   font-family: system-ui, sans-serif;

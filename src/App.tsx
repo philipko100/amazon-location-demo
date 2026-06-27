@@ -8,21 +8,47 @@ import { MapCanvas } from "./components/map/MapCanvas";
 import { RouteMatrixPanel } from "./components/route-matrix/RouteMatrixPanel";
 import { BulkValidationPanel } from "./components/bulk-validation/BulkValidationPanel";
 import { WelcomeModal } from "./components/shared/WelcomeModal";
+import { InfoBadge } from "./components/shared/InfoBadge";
 import { useAppState, type FeatureTab } from "./state/AppState";
 
-const TABS: { id: FeatureTab; label: string }[] = [
-  { id: "map", label: "Map" },
-  { id: "matrix", label: "Route Matrix" },
-  { id: "validation", label: "Bulk Validation" },
+const TABS: { id: FeatureTab; label: string; info: string }[] = [
+  {
+    id: "map",
+    label: "Map",
+    info:
+      "I worked on our Map's service migration from a geospatial data ingestion cluster and distributed MVT tile replication architecture to a single, modular PMTiles-driven architecture for our OpenData GetMapTile technology in Amazon Location Service. Impact: saved $ millions in annual cost and 40+ hours in tile generation workflow runs.",
+  },
+  {
+    id: "matrix",
+    label: "Route Matrix",
+    info:
+      "I built our CalculateRouteMatrix API end-to-end that enables customers to compute 160,000 routes in under 30 seconds via a single, synchronous request to Amazon Location Service. Impact: $ millions in annual revenue.",
+  },
+  {
+    id: "validation",
+    label: "Bulk Validation",
+    info:
+      "I built our Jobs APIs and asynchronous distributed orchestration and workflow system that enables customers to verify, standardize, and enrich hundreds of millions of their address records in under 24 hours using Amazon Location Service. Impact: $ millions in annual revenue.",
+  },
 ];
 
 export function App() {
   const { tab, setTab } = useAppState();
   const [showWelcome, setShowWelcome] = useState(true);
+  // After the welcome modal closes, nudge the user to hover the info badges.
+  // The hint stops once they hover any badge (handled in InfoBadge -> onSeen).
+  const [hintBadges, setHintBadges] = useState(false);
 
   return (
     <div style={rootStyle}>
-      {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
+      {showWelcome && (
+        <WelcomeModal
+          onClose={() => {
+            setShowWelcome(false);
+            setHintBadges(true);
+          }}
+        />
+      )}
       <header style={headerStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/favicon.svg" width={24} height={24} alt="" />
@@ -30,14 +56,21 @@ export function App() {
         </div>
         <nav style={navStyle}>
           {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              style={tabStyle(tab === t.id)}
-              type="button"
-            >
-              {t.label}
-            </button>
+            <div key={t.id} style={tabGroupStyle}>
+              <button
+                onClick={() => setTab(t.id)}
+                style={tabStyle(tab === t.id)}
+                type="button"
+              >
+                {t.label}
+              </button>
+              <InfoBadge
+                label={`About the ${t.label} service`}
+                text={t.info}
+                hint={hintBadges}
+                onSeen={() => setHintBadges(false)}
+              />
+            </div>
           ))}
         </nav>
       </header>
@@ -79,7 +112,8 @@ const headerStyle: React.CSSProperties = {
   flexShrink: 0,
   boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
 };
-const navStyle: React.CSSProperties = { display: "flex", gap: 6 };
+const navStyle: React.CSSProperties = { display: "flex", gap: 12, alignItems: "center" };
+const tabGroupStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 4 };
 const tabStyle = (active: boolean): React.CSSProperties => ({
   border: "none",
   borderRadius: 8,
