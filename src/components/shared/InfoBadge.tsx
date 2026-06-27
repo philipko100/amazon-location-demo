@@ -106,8 +106,9 @@ const glyphStyle: React.CSSProperties = {
 const nudgeStyle: React.CSSProperties = {
   position: "absolute",
   top: "calc(100% + 8px)",
-  left: "50%",
-  transform: "translateX(-50%)",
+  // Align the prompt's left edge with the badge button (extends rightward), so
+  // it can't clip past the window's left edge.
+  left: 0,
   whiteSpace: "nowrap",
   fontSize: 12,
   fontWeight: 700,

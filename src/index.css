@@ -110,10 +110,10 @@ button:not(:disabled):active {
 @keyframes als-nudge-bounce {
   0%,
   100% {
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
   50% {
-    transform: translate(-50%, 4px);
+    transform: translateY(4px);
   }
 }
 .als-nudge-bounce {
