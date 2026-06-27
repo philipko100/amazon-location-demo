@@ -49,7 +49,7 @@ export function InfoBadge({ label, text, hint, onSeen }: Props) {
 
       {hint && !open && (
         <span className="als-nudge-bounce" style={nudgeStyle}>
-          👆 Hover me!
+          Hover me! 👆
         </span>
       )}
 
@@ -106,9 +106,10 @@ const glyphStyle: React.CSSProperties = {
 const nudgeStyle: React.CSSProperties = {
   position: "absolute",
   top: "calc(100% + 8px)",
-  // Align the prompt's left edge with the badge button (extends rightward), so
-  // it can't clip past the window's left edge.
-  left: 0,
+  // Anchor the prompt's right edge to the badge (extends leftward, finger on
+  // the right), so it can't clip past the window's right edge for the rightmost
+  // (Bulk Validation) badge.
+  right: 0,
   whiteSpace: "nowrap",
   fontSize: 12,
   fontWeight: 700,
