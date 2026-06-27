@@ -217,14 +217,19 @@ export function MapCanvas() {
       )}
       <StyleSwitcher styles={MAP_STYLES} activeKey={activeKey} onChange={setActiveKey} />
       {pick && (
-        <div style={pickBannerStyle}>
+        <button
+          type="button"
+          style={pickBannerStyle}
+          onClick={() => requestPick(null)}
+          aria-label="Finish picking"
+        >
           {pick.kind === "dest"
-            ? "Click the map to add destinations"
+            ? "Tap the map to add destinations"
             : pick.kind === "origin"
-              ? "Click the map to add origins"
-              : "Click the map to pick a location"}
-          {pick.sticky ? " · keep clicking · Esc when done" : " · Esc to cancel"}
-        </div>
+              ? "Tap the map to add origins"
+              : "Tap the map to pick a location"}
+          <span style={pickDoneStyle}>{pick.sticky ? "✓ Done" : "✕ Cancel"}</span>
+        </button>
       )}
     </div>
   );
@@ -247,12 +252,27 @@ const pickBannerStyle: React.CSSProperties = {
   left: "50%",
   transform: "translateX(-50%)",
   zIndex: 20,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 10,
+  border: "none",
+  cursor: "pointer",
+  maxWidth: "92vw",
   background: "#232f3e",
   color: "white",
-  padding: "6px 14px",
+  padding: "8px 14px",
   borderRadius: 6,
   fontSize: 14,
   boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+};
+const pickDoneStyle: React.CSSProperties = {
+  background: "#1d4ed8",
+  color: "white",
+  borderRadius: 6,
+  padding: "2px 10px",
+  fontWeight: 700,
+  fontSize: 13,
+  whiteSpace: "nowrap",
 };
 
 // Applied to DOM elements for route midpoint labels (not React styles).

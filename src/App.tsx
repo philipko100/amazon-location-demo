@@ -9,6 +9,7 @@ import { RouteMatrixPanel } from "./components/route-matrix/RouteMatrixPanel";
 import { BulkValidationPanel } from "./components/bulk-validation/BulkValidationPanel";
 import { WelcomeModal } from "./components/shared/WelcomeModal";
 import { InfoBadge } from "./components/shared/InfoBadge";
+import { useIsMobile } from "./hooks/useIsMobile";
 import { useAppState, type FeatureTab } from "./state/AppState";
 
 const TABS: { id: FeatureTab; label: string; info: string }[] = [
@@ -33,13 +34,21 @@ const TABS: { id: FeatureTab; label: string; info: string }[] = [
 ];
 
 export function App() {
-  const { tab, setTab, isDark } = useAppState();
+  const { tab, setTab, isDark, pick } = useAppState();
+  const isMobile = useIsMobile();
+  // While the user is picking a point on the map, slide the active panel away so
+  // the map underneath is tappable — essential on mobile where the panel is
+  // full-width and would otherwise cover the entire map.
+  const picking = pick !== null;
   const [showWelcome, setShowWelcome] = useState(true);
   // When a dark basemap is active, theme the feature panels to match. The dark
   // background is set inline (beats the panel's inline white); the .panel-dark
   // class restyles the panels' inline-styled text/inputs/tables via index.css.
   const panelTheme: React.CSSProperties = isDark ? { background: "#1b2430" } : {};
   const panelClass = isDark ? "panel-dark" : undefined;
+  // Full-width panels on mobile (the narrow strip of map left beside a 560px
+  // panel isn't useful on a phone); the side-panel look stays on larger screens.
+  const panelWidth: React.CSSProperties = isMobile ? { width: "100%" } : {};
   // After the welcome modal closes, nudge the user to hover the info badges.
   // The hint stops once they hover any badge (handled in InfoBadge -> onSeen).
   const [hintBadges, setHintBadges] = useState(false);
@@ -54,12 +63,14 @@ export function App() {
           }}
         />
       )}
-      <header style={headerStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <header style={isMobile ? headerStyleMobile : headerStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <img src="/favicon.svg" width={24} height={24} alt="" />
-          <strong style={titleStyle}>Philip Ko's Career Technologies Demo</strong>
+          <strong style={isMobile ? titleStyleMobile : titleStyle}>
+            Philip Ko's Career Technologies Demo
+          </strong>
         </div>
-        <nav style={navStyle}>
+        <nav style={isMobile ? navStyleMobile : navStyle}>
           {TABS.map((t) => (
             <div key={t.id} style={tabGroupStyle}>
               <button
@@ -90,13 +101,13 @@ export function App() {
             lines) persists across tab switches; we just toggle visibility. */}
         <aside
           className={panelClass}
-          style={{ ...panelWrapStyle, ...panelTheme, ...(tab === "matrix" ? null : panelHiddenStyle) }}
+          style={{ ...panelWrapStyle, ...panelWidth, ...panelTheme, ...(tab === "matrix" && !picking ? null : panelHiddenStyle) }}
         >
           <RouteMatrixPanel />
         </aside>
         <aside
           className={panelClass}
-          style={{ ...panelWrapStyle, ...panelTheme, ...(tab === "validation" ? null : panelHiddenStyle) }}
+          style={{ ...panelWrapStyle, ...panelWidth, ...panelTheme, ...(tab === "validation" && !picking ? null : panelHiddenStyle) }}
         >
           <BulkValidationPanel />
         </aside>
@@ -128,7 +139,31 @@ const titleStyle: React.CSSProperties = {
     '"JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
   letterSpacing: "-0.02em",
 };
+// On mobile: stack title over nav, smaller padding.
+const headerStyleMobile: React.CSSProperties = {
+  ...headerStyle,
+  flexDirection: "column",
+  alignItems: "stretch",
+  gap: 8,
+  padding: "10px 12px",
+};
+// Smaller title that wraps instead of overflowing.
+const titleStyleMobile: React.CSSProperties = {
+  ...titleStyle,
+  fontSize: 14,
+  lineHeight: 1.2,
+  whiteSpace: "normal",
+};
 const navStyle: React.CSSProperties = { display: "flex", gap: 12, alignItems: "center" };
+// Mobile nav: horizontally scrollable row so tabs+badges never crush together.
+const navStyleMobile: React.CSSProperties = {
+  display: "flex",
+  gap: 12,
+  alignItems: "center",
+  overflowX: "auto",
+  paddingBottom: 2,
+  WebkitOverflowScrolling: "touch",
+};
 const tabGroupStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 4 };
 const tabStyle = (active: boolean): React.CSSProperties => ({
   border: "none",

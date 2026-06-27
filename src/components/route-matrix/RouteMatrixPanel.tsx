@@ -11,6 +11,7 @@ import { useRouteMatrix } from "../../hooks/useRouteMatrix";
 import { formatLngLat, formatDistance, formatDuration } from "../../utils/format";
 import { MAX_ORIGINS, MAX_DESTINATIONS, API_MAX_MATRIX } from "../../config/limits";
 import { useAppState, type MapMarker, type RouteLine } from "../../state/AppState";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import { PointList } from "./PointList";
 import { MatrixGrid } from "./MatrixGrid";
 import { Button } from "../shared/Button";
@@ -27,6 +28,7 @@ export function RouteMatrixPanel() {
   const [unit, setUnit] = useState<"km" | "mi">("km");
   const { result, loading, error, run, reset } = useRouteMatrix();
   const { setMarkersFor, setRouteLines, pick, requestPick } = useAppState();
+  const isMobile = useIsMobile();
   // Which list (if any) the user is currently placing on the map via click-to-add.
   const placingKind = pick?.kind ?? null;
 
@@ -133,7 +135,7 @@ export function RouteMatrixPanel() {
         synchronous request.
       </p>
 
-      <div style={columnsStyle}>
+      <div style={{ ...columnsStyle, flexDirection: isMobile ? "column" : "row" }}>
         <PointList
           title="Origins"
           color={ORIGIN_COLOR}
