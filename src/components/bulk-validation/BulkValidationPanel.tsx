@@ -48,7 +48,8 @@ export function BulkValidationPanel() {
         Paste one address per line, or a CSV with headers
         (line1, city, state, zip, country). Jobs API ValidateAddress supports US,
         CA, UK, and AU. Runs as an async S3-backed batch job. This demo is limited
-        to {MAX_ADDRESSES} addresses per run.
+        to {MAX_ADDRESSES} addresses per run. The underlying service can process
+        100+ million records per run.
       </p>
 
       <AddressUploader value={raw} onChange={setRaw} count={addresses.length} />
