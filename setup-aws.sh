@@ -105,13 +105,17 @@ aws s3api put-bucket-versioning --bucket "$BUCKET" \
 echo "  versioning enabled (required by the Jobs API)"
 aws s3api put-bucket-cors --bucket "$BUCKET" --cors-configuration '{
   "CORSRules": [{
-    "AllowedOrigins": ["http://localhost:5173", "https://*.amplifyapp.com"],
+    "AllowedOrigins": ["*"],
     "AllowedMethods": ["GET", "PUT"],
     "AllowedHeaders": ["*"],
     "ExposeHeaders": ["ETag"]
   }]
 }'
-echo "  CORS set (localhost + *.amplifyapp.com) — add a custom domain later if needed"
+# CORS allows any origin: it is not the access control (SigV4 + the Cognito IAM
+# role still gate every request) — it only governs which web origins the browser
+# permits, so this avoids "Failed to fetch" on dev ports, LAN IPs (mobile), and
+# the deployed domain alike. Tighten AllowedOrigins if you want to restrict it.
+echo "  CORS set (all origins; SigV4/IAM is the real access control)"
 
 # ----------------------------------------------------------------------------
 # 3. Jobs execution role (assumed by geo.amazonaws.com)
