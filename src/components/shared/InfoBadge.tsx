@@ -133,6 +133,7 @@ const tooltipStyle: React.CSSProperties = {
   fontWeight: 400,
   padding: "16px 12px 10px",
   borderRadius: 8,
+  border: "1px solid #93c5fd",
   boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
   zIndex: 50,
   textAlign: "left",
