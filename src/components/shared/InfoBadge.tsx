@@ -8,6 +8,7 @@
  * own paragraph.
  */
 import { useEffect, useState } from "react";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 interface Props {
   label: string; // accessible label
@@ -27,6 +28,7 @@ function splitImpact(text: string): { body: string; impact: string | null } {
 
 export function InfoBadge({ label, text, hint, onSeen, open: openExternal }: Props) {
   const [openSelf, setOpenSelf] = useState(false);
+  const isMobile = useIsMobile();
   const { body, impact } = splitImpact(text);
   const open = openSelf || Boolean(openExternal);
 
@@ -57,7 +59,7 @@ export function InfoBadge({ label, text, hint, onSeen, open: openExternal }: Pro
       )}
 
       {open && (
-        <span role="tooltip" style={tooltipStyle}>
+        <span role="tooltip" style={isMobile ? tooltipStyleMobile : tooltipStyle}>
           <span style={bodyTextStyle}>{body}</span>
           {impact && <span style={impactTextStyle}>{impact}</span>}
         </span>
@@ -145,6 +147,19 @@ const tooltipStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: 8,
+};
+
+// On mobile, anchor the tooltip to the viewport (fixed) instead of the badge,
+// so it can't run off the left edge regardless of which badge opened it.
+const tooltipStyleMobile: React.CSSProperties = {
+  ...tooltipStyle,
+  position: "fixed",
+  // Float over the map area, clear of the (taller, stacked) mobile header.
+  top: 96,
+  left: 12,
+  right: 12,
+  width: "auto",
+  maxWidth: "none",
 };
 
 const bodyTextStyle: React.CSSProperties = {
