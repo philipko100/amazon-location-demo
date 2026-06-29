@@ -7,13 +7,16 @@
  * The tooltip text is split on "Impact:" so the impact line stands out in its
  * own paragraph.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   label: string; // accessible label
   text: string; // tooltip body (contains "... Impact: ...")
   hint: boolean; // show the spinning rainbow + bouncing prompt
-  onSeen: () => void; // called when the user first hovers/focuses
+  onSeen: () => void; // called when the tooltip is first revealed
+  /** External open trigger — e.g. hovering the associated tab button. OR'd with
+   *  the badge's own hover/focus so either surface reveals the tooltip. */
+  open?: boolean;
 }
 
 function splitImpact(text: string): { body: string; impact: string | null } {
@@ -22,15 +25,15 @@ function splitImpact(text: string): { body: string; impact: string | null } {
   return { body: text.slice(0, idx).trim(), impact: text.slice(idx).trim() };
 }
 
-export function InfoBadge({ label, text, hint, onSeen }: Props) {
-  const [open, setOpen] = useState(false);
+export function InfoBadge({ label, text, hint, onSeen, open: openExternal }: Props) {
+  const [openSelf, setOpenSelf] = useState(false);
   const { body, impact } = splitImpact(text);
+  const open = openSelf || Boolean(openExternal);
 
-  const reveal = () => {
-    setOpen(true);
-    if (hint) onSeen();
-  };
-  const hide = () => setOpen(false);
+  // Once revealed (by either the badge or the tab), clear the attention hint.
+  useEffect(() => {
+    if (open && hint) onSeen();
+  }, [open, hint, onSeen]);
 
   return (
     <span style={anchorStyle}>
@@ -39,10 +42,10 @@ export function InfoBadge({ label, text, hint, onSeen }: Props) {
         aria-label={label}
         className={hint ? "als-info-rainbow als-info-pulse" : undefined}
         style={badgeStyle}
-        onMouseEnter={reveal}
-        onMouseLeave={hide}
-        onFocus={reveal}
-        onBlur={hide}
+        onMouseEnter={() => setOpenSelf(true)}
+        onMouseLeave={() => setOpenSelf(false)}
+        onFocus={() => setOpenSelf(true)}
+        onBlur={() => setOpenSelf(false)}
       >
         <span style={glyphStyle}>i</span>
       </button>

@@ -41,6 +41,9 @@ export function App() {
   // full-width and would otherwise cover the entire map.
   const picking = pick !== null;
   const [showWelcome, setShowWelcome] = useState(true);
+  // Which tab's info tooltip is open because the user is hovering that tab's
+  // button (or badge). Lets hovering the whole tab — not just the "i" — reveal it.
+  const [hoveredTab, setHoveredTab] = useState<FeatureTab | null>(null);
   // When a dark basemap is active, theme the feature panels to match. The dark
   // background is set inline (beats the panel's inline white); the .panel-dark
   // class restyles the panels' inline-styled text/inputs/tables via index.css.
@@ -72,7 +75,12 @@ export function App() {
         </div>
         <nav style={isMobile ? navStyleMobile : navStyle}>
           {TABS.map((t) => (
-            <div key={t.id} style={tabGroupStyle}>
+            <div
+              key={t.id}
+              style={tabGroupStyle}
+              onMouseEnter={() => setHoveredTab(t.id)}
+              onMouseLeave={() => setHoveredTab(null)}
+            >
               <button
                 onClick={() => setTab(t.id)}
                 style={tabStyle(tab === t.id)}
@@ -85,6 +93,7 @@ export function App() {
                 text={t.info}
                 hint={hintBadges}
                 onSeen={() => setHintBadges(false)}
+                open={hoveredTab === t.id}
               />
             </div>
           ))}
